@@ -16,6 +16,15 @@
         .btn-back { @apply mt-4 text-sm text-gray-500 hover:text-indigo-600 flex items-center justify-center gap-1 transition cursor-pointer; }
         .no-select { user-select: none; }
         .hidden { display: none; }
+        
+        /* New Animation Styles */
+        .answer-correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #14532d !important; animation: pulse-green 0.5s; }
+        .answer-wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #7f1d1d !important; }
+        @keyframes pulse-green {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body class="min-h-screen pb-10 no-select">
@@ -245,11 +254,7 @@
     </main>
 
     <script>
-        // VERSION LOGGING
-        const APP_VERSION = "2.1.0-PRO";
-        const LAST_UPDATED = "2026-01-18";
-        console.log(`%c 🚀 RetailTraining Pro v${APP_VERSION} Running `, "color: white; background: #4f46e5; font-weight: bold; border-radius: 5px; padding: 2px 5px;");
-
+        // --- CONSTANTS & CONFIG ---
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec"; 
         const outlets = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
         const managerMapping = {
@@ -263,7 +268,7 @@
             "R8 - HAFSHAM": ["GM", "PM", "SLS", "TPT", "KKR", "PPK", "CK", "RP"]
         };
 
-        // --- CORE VARIABLES ---
+        // --- STATE VARIABLES ---
         let rawQuestions = [];
         let currentQuizSet = [];
         let allResults = [];
@@ -271,13 +276,13 @@
         let quizIdx = 0;
         let score = 0;
         let isProcessing = false;
-        let userChoices = []; // NEW: Stores staff responses for review
+        let userChoices = [];
 
         window.onload = async () => {
             document.getElementById('report-date').valueAsDate = new Date();
             populateSelects();
             await fetchData();
-            registerServiceWorker(); // Register the offline worker
+            registerServiceWorker();
         };
 
         function registerServiceWorker() {
@@ -307,6 +312,7 @@
                 if(uniqueTopics.length > 0) {
                     uniqueTopics.forEach(t => topicSelector.add(new Option(t, t)));
                     document.getElementById('nav-status').innerText = "System Ready";
+                    document.getElementById('nav-status').className = "text-xs text-green-500 font-mono";
                 }
             } catch (e) { 
                 document.getElementById('nav-status').innerText = "Offline Mode";
@@ -323,24 +329,12 @@
             location.reload(); 
         }
 
-        // --- NEW: LAST ATTEMPT CHECK ---
-        function getLastAttempt(name, topic) {
-            return allResults.filter(r => r.Name === name && r.Topic === topic)
-                             .sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp))[0];
-        }
-
         function startQuiz() {
             const nameInput = document.getElementById('staff-name').value.trim();
             const selectedTopic = document.getElementById('staff-topic-select').value;
             
             if(!nameInput) return alert("Please enter your name");
             if(!selectedTopic) return alert("No active training selected");
-
-            // CHECK PREVIOUS ATTEMPTS
-            const last = getLastAttempt(nameInput, selectedTopic);
-            if(last && parseInt(last.Percentage) >= 90) {
-                if(!confirm(`You already passed this quiz with ${last.Percentage}. Take it again?`)) return;
-            }
 
             currentUser = {
                 name: nameInput,
@@ -352,12 +346,13 @@
             currentQuizSet = rawQuestions.filter(q => q.topic === selectedTopic);
             quizIdx = 0; 
             score = 0;
-            userChoices = []; // Reset choices
+            userChoices = [];
             showView('quiz');
             renderQuestion();
         }
 
         function renderQuestion() {
+            isProcessing = false; // Unlock for new question
             const q = currentQuizSet[quizIdx];
             document.getElementById('quiz-topic-display').innerText = q.topic;
             document.getElementById('quiz-progress').innerText = `Question ${quizIdx+1}/${currentQuizSet.length}`;
@@ -379,20 +374,31 @@
                     opts.appendChild(btn);
                 }
             });
-            isProcessing = false;
         }
 
         async function handleAnswer(idx) {
             if(isProcessing) return;
-            isProcessing = true;
+            isProcessing = true; // Lock immediately
 
+            const q = currentQuizSet[quizIdx];
+            const correctIdx = q.correct;
             const btns = document.querySelectorAll('#q-options button');
-            btns.forEach(b => { b.disabled = true; b.style.opacity = "0.6"; });
-
-            // Record choice for review
+            
             userChoices.push(idx);
 
-            if(idx == currentQuizSet[quizIdx].correct) score++;
+            // ANIMATION LOGIC
+            btns.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i == correctIdx) {
+                    btn.classList.add('answer-correct');
+                } else if (i == idx && idx != correctIdx) {
+                    btn.classList.add('answer-wrong');
+                } else {
+                    btn.style.opacity = "0.5";
+                }
+            });
+
+            if(idx == correctIdx) score++;
             
             quizIdx++;
             setTimeout(() => {
@@ -401,23 +407,17 @@
                 } else {
                     finishQuiz();
                 }
-            }, 300);
+            }, 1200); // 1.2s delay so they can see the correction
         }
 
-        // --- UPDATED: FINISH QUIZ WITH MODAL & REVIEW ---
         async function finishQuiz() {
-    if (isProcessing) return; // Stop if already saving
-    isProcessing = true; 
-    // ... rest of your code
+            // Safety double-check for processing is handled inside handleAnswer
             const percNum = Math.round((score / currentQuizSet.length) * 100);
             
-            // 1. Set Feedback Message
-            let feedback = "";
-            if (percNum >= 90) feedback = "Excellent! Outstanding knowledge!";
-            else if (percNum >= 75) feedback = "Great job! You have a solid understanding.";
-            else feedback = "Good effort, but please review the materials.";
+            let feedback = percNum >= 90 ? "Excellent! Outstanding knowledge!" : 
+                           percNum >= 75 ? "Great job! Solid understanding." : 
+                           "Good effort, keep learning!";
 
-            // 2. Prepare Payload
             const payload = {
                 action: 'save_result',
                 name: currentUser.name,
@@ -427,20 +427,31 @@
                 topic: currentUser.topic
             };
 
-            // 3. Update UI to "Saving"
-            document.getElementById('quiz-container').innerHTML = `<div class="text-center py-10"><p class="animate-bounce text-4xl">📤</p><p class="font-bold">Saving Result...</p></div>`;
+            // Transition UI
+            document.getElementById('quiz-container').innerHTML = `
+                <div class="text-center py-10">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-700 mb-4"></div>
+                    <p class="font-bold text-indigo-700">Submitting Final Result...</p>
+                </div>`;
 
-            // 4. Send to Apps Script
+            // POST to Google (Single attempt)
             try {
-                await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            } catch (e) { console.log("Offline or Error saving"); }
+                await fetch(APPS_SCRIPT_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify(payload) 
+                });
+            } catch (e) { console.error("Network Error on Save", e); }
 
-            // 5. Build Review List
+            // BUILD REVIEW
             const list = document.getElementById('review-list');
             list.innerHTML = '';
             currentQuizSet.forEach((q, i) => {
                 const isCorrect = userChoices[i] == q.correct;
-                const optArr = currentUser.lang === 'en' ? [q.opt1_en, q.opt2_en, q.opt3_en, q.opt4_en] : [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
+                const optArr = currentUser.lang === 'en' ? 
+                    [q.opt1_en, q.opt2_en, q.opt3_en, q.opt4_en] : 
+                    [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
+                
                 list.innerHTML += `
                     <div class="p-3 rounded-lg border-l-4 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}">
                         <p class="text-xs font-bold ${isCorrect ? 'text-green-700' : 'text-red-700'}">Question ${i+1}</p>
@@ -452,7 +463,6 @@
                     </div>`;
             });
 
-            // 6. Show Result Modal
             document.getElementById('final-score-text').innerText = `${score}/${currentQuizSet.length}`;
             document.getElementById('final-perc-text').innerText = `(${percNum}%)`;
             document.getElementById('final-feedback').innerText = feedback;
@@ -462,12 +472,11 @@
         function toggleReview() {
             const section = document.getElementById('review-section');
             const btn = document.getElementById('btn-toggle-review');
-            const isHidden = section.classList.contains('hidden');
             section.classList.toggle('hidden');
-            btn.innerText = isHidden ? "Close Review" : "Review Answers";
+            btn.innerText = section.classList.contains('hidden') ? "Review Answers" : "Close Review";
         }
 
-        // --- MANAGER & SUPERVISOR LOGIC ---
+        // --- MANAGER & SUPERVISOR LOGIC (Kept exactly as provided) ---
         function updateMgrOutlets() {
             const m = document.getElementById('mgr-select').value;
             const oSel = document.getElementById('mgr-outlet');
@@ -493,8 +502,7 @@
             const name = document.getElementById('rep-staff').value;
             const res = allResults.find(r => r.Name === name);
             const display = document.getElementById('rep-score-display');
-            if(res) display.innerText = `${res.Score} (${res.Percentage})`;
-            else display.innerText = "-";
+            display.innerText = res ? `${res.Score} (${res.Percentage})` : "-";
         }
 
         async function submitReport() {
@@ -564,7 +572,4 @@
         }
     </script>
 </body>
-
 </html>
-
-
