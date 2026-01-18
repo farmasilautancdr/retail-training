@@ -406,6 +406,9 @@
 
         // --- UPDATED: FINISH QUIZ WITH MODAL & REVIEW ---
         async function finishQuiz() {
+    if (isProcessing) return; // Stop if already saving
+    isProcessing = true; 
+    // ... rest of your code
             const percNum = Math.round((score / currentQuizSet.length) * 100);
             
             // 1. Set Feedback Message
@@ -563,4 +566,5 @@
 </body>
 
 </html>
+
 
