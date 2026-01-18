@@ -544,50 +544,78 @@
             renderDashTable();
         }
 
-        function renderDashTable() {
+        // Add this helper to fix "Invalid Date"
+function formatAppDate(dateString) {
+    if (!dateString) return "N/A";
+    const d = new Date(dateString);
+    return isNaN(d.getTime()) ? dateString : d.toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric'
+    });
+}
+
+function renderDashTable() {
     const filter = document.getElementById('sup-filter-outlet').value;
     const reportBody = document.getElementById('dash-table-body');
     const reviewBody = document.getElementById('question-review-body');
+    const gapBody = document.getElementById('gap-analysis-body');
     
     reportBody.innerHTML = '';
     reviewBody.innerHTML = '';
+    gapBody.innerHTML = '';
 
-    // 1. Populate Manager Report Logs
-    const filteredReports = filter === "ALL" ? allReports : allReports.filter(r => (r.Outlet || r.outlet) === filter);
+    // --- 1. MANAGER REPORTS (Fixing Visibility & Dates) ---
+    const filteredReports = filter === "ALL" ? allReports : allReports.filter(r => 
+        (r.Outlet || r.outlet || "").toString().toUpperCase() === filter.toUpperCase());
+    
     filteredReports.forEach(rep => {
-        // Robust key checking to prevent 'undefined'
-        const sName = rep["Staff Name"] || rep["staffName"] || rep["Name"] || "N/A";
-        const sGaps = rep["Performance Gaps"] || rep["gaps"] || rep["Gaps"] || "-";
-        
         reportBody.innerHTML += `
-            <tr class="border-b hover:bg-gray-50">
-                <td class="p-3 font-bold">${sName}</td>
-                <td class="p-3">${rep["Skill Level"] || rep["level"] || "-"}</td>
-                <td class="p-3 truncate max-w-xs">${rep["Competency Comments"] || rep["comments"] || "-"}</td>
-                <td class="p-3 truncate max-w-xs">${rep["Housebrand Focus Points"] || rep["focus"] || "-"}</td>
-                <td class="p-3 bg-red-50 font-medium">${sGaps}</td>
-                <td class="p-3 bg-green-50 font-medium">${rep["Recommendations"] || rep["rec"] || "-"}</td>
-                <td class="p-3 italic text-gray-400">${rep["Manager"] || rep["manager"] || "Admin"}</td>
+            <tr class="border-b hover:bg-gray-50 text-[10px]">
+                <td class="p-3 font-bold">${rep["Staff Name"] || rep.staffName || "N/A"}</td>
+                <td class="p-3">${rep["Skill Level"] || rep.level || "-"}</td>
+                <td class="p-3">${rep["Competency Comments"] || rep.comments || "-"}</td>
+                <td class="p-3">${rep["Performance Gaps"] || rep.gaps || "-"}</td>
+                <td class="p-3 font-medium text-gray-500">${formatAppDate(rep.Timestamp || rep["Timestamp (Standard)"])}</td>
+                <td class="p-3 italic">${rep.Manager || rep.manager || "Admin"}</td>
             </tr>`;
     });
 
-    // 2. Populate Individual Question Review (Wrong Answers)
-    const filteredWrongs = filter === "ALL" ? allWrongAnswers : allWrongAnswers.filter(w => (w.Outlet || w.outlet) === filter);
+    // --- 2. WRONG ANSWERS & FAIL COUNT LOGIC ---
+    const filteredWrongs = filter === "ALL" ? allWrongAnswers : allWrongAnswers.filter(w => 
+        (w.Outlet || w.outlet || "").toString().toUpperCase() === filter.toUpperCase());
+
+    const counts = {}; // For Fail Count
     filteredWrongs.forEach(w => {
-        // Strict mapping to your Spreadsheet Headers
-        const qText = w["Question Text"] || w["question"] || "Unknown Question";
-        const wChoice = w["Wrong Choice"] || w["selected"] || "N/A";
-        const cAns = w["Correct Answer"] || w["correct"] || "N/A";
-
+        // Individual Rows
         reviewBody.innerHTML += `
-            <tr class="border-b hover:bg-red-50 transition-colors">
-                <td class="p-2 font-bold">${w["Staff Name"] || w["name"] || "Anonymous"}</td>
-                <td class="p-2 text-gray-500">${w["Topic"] || "General"}</td>
-                <td class="p-2">${qText}</td>
-                <td class="p-2 text-red-600 font-medium">${wChoice}</td>
-                <td class="p-2 text-green-600 font-bold">${cAns}</td>
+            <tr class="border-b hover:bg-red-50 text-[10px]">
+                <td class="p-2 font-bold">${w["Staff Name"] || "Anonymous"}</td>
+                <td class="p-2">${w["Topic"] || "General"}</td>
+                <td class="p-2">${w["Question Text"] || "Unknown"}</td>
+                <td class="p-2 text-red-600">${w["Wrong Choice"] || "N/A"}</td>
+                <td class="p-2 font-mono text-gray-400">${formatAppDate(w.Timestamp)}</td>
             </tr>`;
+
+        // Calculate Fail Count for Gap Analysis
+        const qKey = w["Question Text"] || "Unknown";
+        if (!counts[qKey]) {
+            counts[qKey] = { topic: w.Topic, text: qKey, count: 0, correct: w["Correct Answer"] };
+        }
+        counts[qKey].count++;
     });
+
+    // --- 3. RENDER FAIL COUNT TABLE (Gap Analysis) ---
+    Object.values(counts)
+        .sort((a, b) => b.count - a.count)
+        .forEach(item => {
+            gapBody.innerHTML += `
+                <tr class="border-b text-xs">
+                    <td class="p-3 font-bold text-indigo-600">${item.topic}</td>
+                    <td class="p-3">${item.text}</td>
+                    <td class="p-3 text-center"><span class="bg-red-600 text-white px-3 py-1 rounded-full font-bold">${item.count}</span></td>
+                    <td class="p-3 font-bold text-green-700">${item.correct || "Check Sheet"}</td>
+                </tr>`;
+        });
+}
 
     renderGapAnalysis(filteredWrongs);
 }
@@ -659,5 +687,6 @@ function renderGapAnalysis(wrongAnswers) {
     </script>
 </body>
 </html>
+
 
 
