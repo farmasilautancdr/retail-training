@@ -344,7 +344,6 @@
 
         function goHome() { location.reload(); }
 
-        // --- STAFF QUIZ FLOW (Kept original logic) ---
         function startQuiz() {
             const nameInput = document.getElementById('staff-name').value.trim();
             const topic = document.getElementById('staff-topic-select').value;
@@ -455,7 +454,6 @@
             document.getElementById('final-perc-text').innerText = `(${payload.perc})`;
         }
 
-        // --- MANAGER LOGIC (Updated with new fields) ---
         function updateMgrOutlets() {
             const m = document.getElementById('mgr-select').value;
             const oSel = document.getElementById('mgr-outlet');
@@ -502,10 +500,10 @@
                 staffScore: document.getElementById('rep-score-display').innerText,
                 trainTitle: document.getElementById('rep-title').value,
                 level: document.getElementById('rep-level').value,
-                competencyComments: document.getElementById('rep-comments').value,
-                housebrandFocus: document.getElementById('rep-housebrand').value,
-                performanceGaps: document.getElementById('rep-gaps').value,
-                recommendations: document.getElementById('rep-rec').value
+                comments: document.getElementById('rep-comments').value,
+                focus: document.getElementById('rep-housebrand').value,
+                gaps: document.getElementById('rep-gaps').value,
+                rec: document.getElementById('rep-rec').value
             };
             if(!payload.staffName || !payload.trainTitle) return alert("Please select staff and training topic");
             showLoader(true);
@@ -515,7 +513,6 @@
             goHome();
         }
 
-        // --- SUPERVISOR DASHBOARD (Updated Table Mapping) ---
         async function loginSupervisor() {
             if(document.getElementById('sup-pass').value !== "admin") return alert("Unauthorized");
             showLoader(true);
@@ -534,7 +531,7 @@
 
             filteredResults.forEach(r => {
                 const sName = (r.Name || r.name || "").toString().trim().toUpperCase();
-                // Find matching report by staff name
+                // Find matching report by staff name (Updated to check for Sheet Header keys)
                 const report = allReports.find(rep => {
                     const repName = (rep["Staff Name"] || rep.staffName || "").toString().trim().toUpperCase();
                     return repName === sName;
@@ -546,60 +543,89 @@
                             <div class="font-bold text-gray-800">${sName}</div>
                             <div class="text-[9px] text-gray-400 font-mono">${r.Outlet || r.outlet} | Quiz: ${r.Percentage || r.perc}</div>
                         </td>
-                        <td class="p-3 font-bold ${report.Level === 'High' ? 'text-green-600' : 'text-orange-600'}">
-                            ${report.Level || '-'}
+                        <td class="p-3 font-bold ${report["Skill Level"] === 'High' ? 'text-green-600' : 'text-orange-600'}">
+                            ${report["Skill Level"] || '-'}
                         </td>
-                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Competency Comments"] || report.competencyComments || '-'}">
-                            ${report["Competency Comments"] || report.competencyComments || '-'}
+                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Competency Comments"] || '-'}">
+                            ${report["Competency Comments"] || '-'}
                         </td>
-                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Housebrand Focus Points"] || report.housebrandFocus || '-'}">
-                            ${report["Housebrand Focus Points"] || report.housebrandFocus || '-'}
+                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Housebrand Focus Points"] || '-'}">
+                            ${report["Housebrand Focus Points"] || '-'}
                         </td>
-                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Performance Gaps"] || report.performanceGaps || '-'}">
-                            ${report["Performance Gaps"] || report.performanceGaps || '-'}
+                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Performance Gaps"] || '-'}">
+                            ${report["Performance Gaps"] || '-'}
                         </td>
-                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report.Recommendations || report.recommendations || '-'}">
-                            ${report.Recommendations || report.recommendations || '-'}
+                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Recommendations"] || '-'}">
+                            ${report["Recommendations"] || '-'}
                         </td>
-                        <td class="p-3 text-gray-400 italic">${report.Manager || '-'}</td>
+                        <td class="p-3 text-gray-400 italic">${report["Manager"] || '-'}</td>
                     </tr>`;
             });
             renderGapAnalysis(filter);
         }
 
         function renderGapAnalysis(filter) {
-            const gapBody = document.getElementById('gap-analysis-body');
-            gapBody.innerHTML = '';
-            const filteredWrong = filter === "ALL" ? allWrongAnswers : allWrongAnswers.filter(w => w.Outlet === filter);
-            const gapStats = {};
-            filteredWrong.forEach(w => {
-                const key = w["Question ID"] || w.qId;
-                if(!gapStats[key]) {
-                    gapStats[key] = {
-                        count: 0,
-                        text: w["Question Text"] || w.qText,
-                        topic: w.Topic || "Unknown",
-                        correct: w["Correct Answer"] || w.correctAnswerText
+            const body = document.getElementById('gap-analysis-body');
+            body.innerHTML = '';
+            
+            const filteredWrongs = filter === "ALL" ? allWrongAnswers : allWrongAnswers.filter(w => (w.Outlet || w.outlet) === filter);
+            const questionMap = {};
+
+            filteredWrongs.forEach(w => {
+                const qKey = w["Question Text"] || w.qText;
+                if(!questionMap[qKey]) {
+                    questionMap[qKey] = {
+                        topic: w.Topic || w.topic,
+                        text: qKey,
+                        correct: w["Correct Answer"] || w.correctAnswerText,
+                        count: 0
                     };
                 }
-                gapStats[key].count++;
+                questionMap[qKey].count++;
             });
 
-            const sortedGaps = Object.values(gapStats).sort((a,b) => b.count - a.count);
-            if(sortedGaps.length === 0) {
-                gapBody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-400 italic">No granular gap data found.</td></tr>';
-                return;
-            }
-
-            sortedGaps.forEach(gap => {
-                gapBody.innerHTML += `
-                    <tr class="border-b bg-white hover:bg-red-50 transition-colors">
-                        <td class="p-3 font-bold text-indigo-700">${gap.topic}</td>
-                        <td class="p-3 text-gray-700 font-medium">${gap.text}</td>
-                        <td class="p-3 text-center font-black text-red-600">${gap.count}</td>
-                        <td class="p-3 text-green-600 font-bold">${gap.correct}</td>
+            const sortedGaps = Object.values(questionMap).sort((a,b) => b.count - a.count).slice(0, 5);
+            
+            sortedGaps.forEach(g => {
+                body.innerHTML += `
+                    <tr class="border-b">
+                        <td class="p-3 text-gray-500 font-bold">${g.topic}</td>
+                        <td class="p-3 text-gray-800 font-medium">${g.text}</td>
+                        <td class="p-3 text-center"><span class="bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold">${g.count}</span></td>
+                        <td class="p-3 text-green-700 font-bold">${g.correct}</td>
                     </tr>`;
             });
+        }
+
+        function downloadCSV() {
+            let csv = "Staff Name,Outlet,Quiz Score,Skill Level,Competency,Housebrand Focus,Gaps,Recommendations,Manager\n";
+            allResults.forEach(r => {
+                const sName = (r.Name || r.name || "").toString().trim().toUpperCase();
+                const report = allReports.find(rep => (rep["Staff Name"] || rep.staffName || "").toString().trim().toUpperCase() === sName) || {};
+                
+                let row = [
+                    sName,
+                    r.Outlet || r.outlet,
+                    r.Percentage || r.perc,
+                    report["Skill Level"] || "-",
+                    (report["Competency Comments"] || "-").replace(/,/g, " "),
+                    (report["Housebrand Focus Points"] || "-").replace(/,/g, " "),
+                    (report["Performance Gaps"] || "-").replace(/,/g, " "),
+                    (report["Recommendations"] || "-").replace(/,/g, " "),
+                    report["Manager"] || "-"
+                ];
+                csv += row.join(",") + "\n";
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `RetailTraining_Report_${new Date().toLocaleDateString()}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
     </script>
 </body>
