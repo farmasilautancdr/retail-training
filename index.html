@@ -175,16 +175,20 @@
 
                 <div class="space-y-3">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase">Manager's Comments</label>
-                        <textarea id="rep-comments" class="w-full p-2 border rounded h-16 text-sm" placeholder="Summarize training session..."></textarea>
+                        <label class="block text-xs font-bold text-indigo-600 uppercase">Competency Comments</label>
+                        <textarea id="rep-comments" class="w-full p-2 border rounded h-16 text-sm" placeholder="Detail the staff's competency shown..."></textarea>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase">Knowledge Gaps Noticed</label>
-                        <textarea id="rep-gaps" class="w-full p-2 border rounded h-16 text-sm" placeholder="What knowledge is missing?"></textarea>
+                        <label class="block text-xs font-bold text-indigo-600 uppercase">Housebrand Focus Points</label>
+                        <textarea id="rep-housebrand" class="w-full p-2 border rounded h-16 text-sm" placeholder="Focus points regarding housebrand..."></textarea>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase">Recommendations</label>
-                        <textarea id="rep-rec" class="w-full p-2 border rounded h-16 text-sm" placeholder="Required next steps..."></textarea>
+                        <label class="block text-xs font-bold text-red-500 uppercase">Performance Gaps</label>
+                        <textarea id="rep-gaps" class="w-full p-2 border rounded h-16 text-sm" placeholder="What gaps were identified during assessment?"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-green-600 uppercase">Recommendations</label>
+                        <textarea id="rep-rec" class="w-full p-2 border rounded h-16 text-sm" placeholder="Future steps and training needs..."></textarea>
                     </div>
                 </div>
 
@@ -237,16 +241,17 @@
             </div>
             
             <div class="glass p-6 rounded-2xl shadow-lg border border-white">
-                <h3 class="text-sm font-bold text-indigo-600 mb-4 uppercase tracking-widest">Staff Performance Logs</h3>
+                <h3 class="text-sm font-bold text-indigo-600 mb-4 uppercase tracking-widest">Manager Assessment Logs</h3>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                    <table class="w-full text-left text-[10px]">
                         <thead class="bg-gray-50 uppercase font-bold text-gray-500">
                             <tr class="border-b">
-                                <th class="p-3">Staff Name</th>
-                                <th class="p-3">Outlet</th>
-                                <th class="p-3">Quiz %</th>
-                                <th class="p-3">Skill Level</th>
-                                <th class="p-3">Assessment Gaps</th>
+                                <th class="p-3">Staff</th>
+                                <th class="p-3">Level</th>
+                                <th class="p-3">Competency</th>
+                                <th class="p-3">Housebrand</th>
+                                <th class="p-3">Gaps</th>
+                                <th class="p-3">Recs</th>
                                 <th class="p-3">Manager</th>
                             </tr>
                         </thead>
@@ -257,7 +262,7 @@
         </div>
 
         <footer class="mt-12 mb-6 text-center">
-            <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">RetailTraining Pro v3.1.1</span>
+            <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">RetailTraining Pro v3.2.0</span>
         </footer>
 
     </main>
@@ -339,7 +344,7 @@
 
         function goHome() { location.reload(); }
 
-        // --- STAFF QUIZ FLOW ---
+        // --- STAFF QUIZ FLOW (Kept original logic) ---
         function startQuiz() {
             const nameInput = document.getElementById('staff-name').value.trim();
             const topic = document.getElementById('staff-topic-select').value;
@@ -450,7 +455,7 @@
             document.getElementById('final-perc-text').innerText = `(${payload.perc})`;
         }
 
-        // --- MANAGER LOGIC ---
+        // --- MANAGER LOGIC (Updated with new fields) ---
         function updateMgrOutlets() {
             const m = document.getElementById('mgr-select').value;
             const oSel = document.getElementById('mgr-outlet');
@@ -497,9 +502,10 @@
                 staffScore: document.getElementById('rep-score-display').innerText,
                 trainTitle: document.getElementById('rep-title').value,
                 level: document.getElementById('rep-level').value,
-                comments: document.getElementById('rep-comments').value,
-                gaps: document.getElementById('rep-gaps').value,
-                rec: document.getElementById('rep-rec').value
+                competencyComments: document.getElementById('rep-comments').value,
+                housebrandFocus: document.getElementById('rep-housebrand').value,
+                performanceGaps: document.getElementById('rep-gaps').value,
+                recommendations: document.getElementById('rep-rec').value
             };
             if(!payload.staffName || !payload.trainTitle) return alert("Please select staff and training topic");
             showLoader(true);
@@ -509,7 +515,7 @@
             goHome();
         }
 
-        // --- SUPERVISOR DASHBOARD ---
+        // --- SUPERVISOR DASHBOARD (Updated Table Mapping) ---
         async function loginSupervisor() {
             if(document.getElementById('sup-pass').value !== "admin") return alert("Unauthorized");
             showLoader(true);
@@ -528,6 +534,7 @@
 
             filteredResults.forEach(r => {
                 const sName = (r.Name || r.name || "").toString().trim().toUpperCase();
+                // Find matching report by staff name
                 const report = allReports.find(rep => {
                     const repName = (rep["Staff Name"] || rep.staffName || "").toString().trim().toUpperCase();
                     return repName === sName;
@@ -535,14 +542,26 @@
                 
                 body.innerHTML += `
                     <tr class="border-b hover:bg-white transition-colors">
-                        <td class="p-3 font-bold text-gray-800">${sName}</td>
-                        <td class="p-3 text-gray-500 font-mono text-[10px]">${r.Outlet || r.outlet}</td>
-                        <td class="p-3 text-indigo-600 font-bold">${r.Percentage || r.perc}</td>
-                        <td class="p-3 font-bold ${report.Level === 'High' ? 'text-green-600' : 'text-orange-600'}">
-                            ${report.Level || '<span class="text-gray-300 font-normal italic">Pending</span>'}
+                        <td class="p-3">
+                            <div class="font-bold text-gray-800">${sName}</div>
+                            <div class="text-[9px] text-gray-400 font-mono">${r.Outlet || r.outlet} | Quiz: ${r.Percentage || r.perc}</div>
                         </td>
-                        <td class="p-3 text-gray-600 truncate max-w-[200px]" title="${report.Gaps || '-'}">${report.Gaps || '-'}</td>
-                        <td class="p-3 text-gray-400 italic font-medium">${report.Manager || '-'}</td>
+                        <td class="p-3 font-bold ${report.Level === 'High' ? 'text-green-600' : 'text-orange-600'}">
+                            ${report.Level || '-'}
+                        </td>
+                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Competency Comments"] || report.competencyComments || '-'}">
+                            ${report["Competency Comments"] || report.competencyComments || '-'}
+                        </td>
+                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Housebrand Focus Points"] || report.housebrandFocus || '-'}">
+                            ${report["Housebrand Focus Points"] || report.housebrandFocus || '-'}
+                        </td>
+                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report["Performance Gaps"] || report.performanceGaps || '-'}">
+                            ${report["Performance Gaps"] || report.performanceGaps || '-'}
+                        </td>
+                        <td class="p-3 text-gray-600 max-w-[120px] truncate" title="${report.Recommendations || report.recommendations || '-'}">
+                            ${report.Recommendations || report.recommendations || '-'}
+                        </td>
+                        <td class="p-3 text-gray-400 italic">${report.Manager || '-'}</td>
                     </tr>`;
             });
             renderGapAnalysis(filter);
@@ -577,43 +596,10 @@
                     <tr class="border-b bg-white hover:bg-red-50 transition-colors">
                         <td class="p-3 font-bold text-indigo-700">${gap.topic}</td>
                         <td class="p-3 text-gray-700 font-medium">${gap.text}</td>
-                        <td class="p-3 text-center font-bold text-red-600">${gap.count}</td>
-                        <td class="p-3 text-green-600 font-bold italic">${gap.correct}</td>
+                        <td class="p-3 text-center font-black text-red-600">${gap.count}</td>
+                        <td class="p-3 text-green-600 font-bold">${gap.correct}</td>
                     </tr>`;
             });
-        }
-
-        // --- CSV EXPORT LOGIC ---
-        function downloadCSV() {
-            const filter = document.getElementById('sup-filter-outlet').value;
-            const filteredResults = filter === "ALL" ? allResults : allResults.filter(r => (r.Outlet || r.outlet) === filter);
-            
-            let csvContent = "data:text/csv;charset=utf-8,Staff Name,Outlet,Quiz Score,Percentage,Topic,Skill Level,Gaps,Manager\n";
-            
-            filteredResults.forEach(r => {
-                const sName = (r.Name || r.name || "").toString().trim().toUpperCase();
-                const report = allReports.find(rep => (rep["Staff Name"] || rep.staffName || "").toString().trim().toUpperCase() === sName) || {};
-                
-                const row = [
-                    sName,
-                    r.Outlet || r.outlet,
-                    r.Score || r.score,
-                    r.Percentage || r.perc,
-                    r.Topic || r.topic,
-                    report.Level || "Pending",
-                    (report.Gaps || "-").replace(/,/g, ";"), // Clean commas to prevent CSV breakage
-                    report.Manager || "-"
-                ];
-                csvContent += row.join(",") + "\n";
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Training_Report_${filter}_${new Date().toISOString().slice(0,10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         }
     </script>
 </body>
