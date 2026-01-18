@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetailTraining Pro</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #f3f4f6; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .role-card:hover { transform: translateY(-5px); transition: all 0.3s ease; }
+        .btn-grad { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: 0.3s; }
+        .btn-grad:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-back { @apply mt-4 text-sm text-gray-500 hover:text-indigo-600 flex items-center justify-center gap-1 transition cursor-pointer; }
+        .no-select { user-select: none; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="min-h-screen pb-10 no-select">
+
+    <nav class="bg-white shadow-sm p-4 mb-6">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="font-bold text-xl text-indigo-700">Retail Training Pro</h1>
+            <div id="nav-status" class="text-xs text-gray-400 font-mono">Connecting...</div>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-4">
+        
+        <div id="view-roles" class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+            <div onclick="showView('staff-login')" class="role-card glass p-8 rounded-2xl shadow-xl cursor-pointer text-center border-2 border-transparent hover:border-indigo-500">
+                <div class="text-5xl mb-4">👤</div>
+                <h2 class="text-xl font-bold">Staff Member</h2>
+                <p class="text-gray-500 text-sm mt-2">Take training quizzes</p>
+            </div>
+            <div onclick="showView('manager-login')" class="role-card glass p-8 rounded-2xl shadow-xl cursor-pointer text-center border-2 border-transparent hover:border-indigo-500">
+                <div class="text-5xl mb-4">👔</div>
+                <h2 class="text-xl font-bold">Area Manager</h2>
+                <p class="text-gray-500 text-sm mt-2">Submit assessment reports</p>
+            </div>
+            <div onclick="showView('supervisor-login')" class="role-card glass p-8 rounded-2xl shadow-xl cursor-pointer text-center border-2 border-transparent hover:border-indigo-500">
+                <div class="text-5xl mb-4">⭐</div>
+                <h2 class="text-xl font-bold">Supervisor</h2>
+                <p class="text-gray-500 text-sm mt-2">Full data dashboard</p>
+            </div>
+        </div>
+
+        <div id="view-staff-login" class="hidden glass p-8 rounded-2xl shadow-xl max-w-md mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center">Staff Entry</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Preferred Language</label>
+                    <select id="staff-lang" class="w-full p-3 border rounded-lg">
+                        <option value="en">English</option>
+                        <option value="ms">Bahasa Melayu</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Full Name</label>
+                    <input type="text" id="staff-name" class="w-full p-3 border rounded-lg" placeholder="Enter name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Outlet</label>
+                    <select id="staff-outlet" class="w-full p-3 border rounded-lg"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Active Training Topic</label>
+                    <select id="staff-topic-select" class="w-full p-3 border-2 border-indigo-100 rounded-lg font-bold text-indigo-700">
+                        <option value="">Loading active topics...</option>
+                    </select>
+                </div>
+                <button id="btn-start-quiz" onclick="startQuiz()" class="w-full btn-grad text-white p-4 rounded-xl font-bold mt-4 shadow-lg">Mula Kuiz / Start Quiz</button>
+                <div onclick="goHome()" class="btn-back">← Back to Login</div>
+            </div>
+        </div>
+
+        <div id="view-quiz" class="hidden glass p-8 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-center mb-6">
+                <span id="quiz-progress" class="text-indigo-600 font-bold text-sm">Question 1</span>
+                <span id="quiz-topic-display" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase"></span>
+            </div>
+            <div id="quiz-container">
+                <h3 id="q-text" class="text-xl font-semibold mb-6"></h3>
+                <div id="q-options" class="grid grid-cols-1 gap-4"></div>
+            </div>
+            <p class="text-center text-[10px] text-gray-400 mt-8 italic">Quiz in progress. Navigation is locked.</p>
+        </div>
+
+        <div id="view-success" class="hidden glass p-8 rounded-3xl shadow-2xl max-w-md mx-auto text-center border-t-8 border-green-500">
+            <div class="text-5xl mb-4">🎉</div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-1">Quiz Completed!</h2>
+            
+            <div class="my-6 p-4 bg-gray-50 rounded-2xl">
+                <p id="final-score-text" class="text-4xl font-black text-indigo-700 mb-1">0/0</p>
+                <p id="final-perc-text" class="text-lg font-bold text-indigo-500">(0%)</p>
+            </div>
+
+            <p id="final-feedback" class="text-md font-medium text-gray-700 mb-6">Excellent!</p>
+            
+            <div id="review-section" class="hidden text-left mt-6 border-t pt-4 max-h-60 overflow-y-auto mb-6">
+                <h4 class="font-bold text-sm uppercase text-gray-400 mb-3 text-center">Review Answers</h4>
+                <div id="review-list" class="space-y-3"></div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button id="btn-toggle-review" onclick="toggleReview()" class="w-full bg-white border-2 border-indigo-500 text-indigo-600 p-3 rounded-xl font-bold hover:bg-indigo-50 transition">
+                    Review Answers
+                </button>
+                <button onclick="goHome()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">
+                    Back to Home
+                </button>
+            </div>
+        </div>
+
+        <div id="view-manager-login" class="hidden glass p-8 rounded-2xl shadow-xl max-w-md mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center">Manager Login</h2>
+            <div class="space-y-4">
+                <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-3 border rounded-lg">
+                    <option value="">Select Manager</option>
+                </select>
+                <select id="mgr-outlet" class="w-full p-3 border rounded-lg">
+                    <option value="">Select Outlet</option>
+                </select>
+                <input type="password" id="mgr-pass" class="w-full p-3 border rounded-lg" placeholder="Manager Password">
+                <button onclick="loginManager()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">Access Report Form</button>
+                <div onclick="goHome()" class="btn-back">← Back to Login</div>
+            </div>
+        </div>
+
+        <div id="view-manager-form" class="hidden glass p-8 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-start mb-4">
+                <h2 class="text-2xl font-bold text-indigo-700">Assessment Report</h2>
+                <button onclick="goHome()" class="text-xs text-indigo-600 font-bold border border-indigo-200 px-3 py-1 rounded-lg">Logout</button>
+            </div>
+            <p id="mgr-info-display" class="text-sm text-gray-500 mb-6"></p>
+            <div class="bg-indigo-50 p-4 rounded-xl mb-6 flex justify-between items-center">
+                <div>
+                    <p class="text-xs uppercase font-bold text-indigo-400">Quiz Completed</p>
+                    <p id="stat-completed" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs uppercase font-bold text-indigo-400">Report Date</p>
+                    <input type="date" id="report-date" class="bg-transparent font-bold outline-none">
+                </div>
+            </div>
+            <form id="report-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Select Staff Member</label>
+                        <select id="rep-staff" class="w-full p-2 border rounded" onchange="updateStaffScoreDisplay()"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Staff Quiz Result</label>
+                        <div id="rep-score-display" class="p-2 bg-gray-100 rounded font-mono border text-center font-bold text-indigo-700">-</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-bold mb-1">Training Title</label><input type="text" id="rep-title" class="w-full p-2 border rounded"></div>
+                    <div><label class="block text-sm font-bold mb-1">Training Date</label><input type="date" id="rep-train-date" class="w-full p-2 border rounded"></div>
+                </div>
+                <div class="border-t pt-4">
+                    <label class="block text-sm font-bold mb-1">Staff Competency Level</label>
+                    <select id="rep-level" class="w-full p-3 border-2 rounded-lg font-bold bg-white">
+                        <option value="Low">Low (0-70%)</option>
+                        <option value="Medium">Medium (71-84%)</option>
+                        <option value="High">High (85-100%)</option>
+                    </select>
+                </div>
+                <div class="space-y-3">
+                    <textarea id="rep-comments" placeholder="Competency Comments" class="w-full p-2 border rounded h-20 text-sm"></textarea>
+                    <textarea id="rep-focus" placeholder="Housebrand Focus Points" class="w-full p-2 border rounded h-20 text-sm"></textarea>
+                    <textarea id="rep-gaps" placeholder="Performance Gaps" class="w-full p-2 border rounded h-20 text-sm"></textarea>
+                    <textarea id="rep-rec" placeholder="Recommendations" class="w-full p-2 border rounded h-20 text-sm"></textarea>
+                </div>
+                <button type="button" id="btn-submit-report" onclick="submitReport()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">Submit Report</button>
+            </form>
+        </div>
+
+        <div id="view-supervisor-login" class="hidden glass p-8 rounded-2xl shadow-xl max-w-md mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center">Supervisor Access</h2>
+            <div class="space-y-4">
+                <input type="password" id="sup-pass" class="w-full p-3 border rounded-lg" placeholder="Enter Supervisor Password">
+                <button onclick="loginSupervisor()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">Access Dashboard</button>
+                <div onclick="goHome()" class="btn-back">← Back to Login</div>
+            </div>
+        </div>
+
+        <div id="view-supervisor-dash" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold">Data Insights</h2>
+                <button onclick="goHome()" class="text-xs bg-white border border-gray-300 px-4 py-2 rounded-lg font-bold">Logout</button>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass p-4 rounded-xl text-center shadow-sm">
+                    <p class="text-xs text-gray-400 uppercase">Total Staff</p>
+                    <p id="dash-staff" class="text-2xl font-bold text-indigo-600">0</p>
+                </div>
+                <div class="glass p-4 rounded-xl text-center shadow-sm">
+                    <p class="text-xs text-gray-400 uppercase">Avg Score</p>
+                    <p id="dash-avg" class="text-2xl font-bold text-orange-600">0%</p>
+                </div>
+                <div class="glass p-4 rounded-xl text-center shadow-sm">
+                    <p class="text-xs text-gray-400 uppercase">Outlets</p>
+                    <p id="dash-outlets" class="text-2xl font-bold text-purple-600">0</p>
+                </div>
+                <div class="glass p-4 rounded-xl text-center shadow-sm">
+                    <p class="text-xs text-gray-400 uppercase">Reports</p>
+                    <p id="dash-reps" class="text-2xl font-bold text-green-600">0</p>
+                </div>
+            </div>
+            <div class="glass p-6 rounded-2xl shadow-lg">
+                <div class="flex flex-wrap gap-4 mb-6 items-center">
+                    <input type="text" id="filter-name" placeholder="Search staff..." class="p-2 border rounded flex-grow" onkeyup="renderDashTable()">
+                    <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold">Export CSV</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 uppercase text-xs font-bold text-gray-500">
+                            <tr class="border-b"><th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3">Score</th><th class="p-3">Topic</th></tr>
+                        </thead>
+                        <tbody id="dash-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-12 mb-6 text-center">
+            <div class="flex flex-col items-center justify-center gap-1">
+                <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">
+                    RetailTraining Pro
+                </span>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-[9px] font-bold rounded-md">
+                        v2.1.0-PRO
+                    </span>
+                    <span class="text-[9px] text-gray-400">
+                        Last Update: Jan 2026
+                    </span>
+                </div>
+            </div>
+        </footer>
+
+    </main>
+
+    <script>
+        // VERSION LOGGING
+        const APP_VERSION = "2.1.0-PRO";
+        const LAST_UPDATED = "2026-01-18";
+        console.log(`%c 🚀 RetailTraining Pro v${APP_VERSION} Running `, "color: white; background: #4f46e5; font-weight: bold; border-radius: 5px; padding: 2px 5px;");
+
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec"; 
+        const outlets = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
+        const managerMapping = {
+            "R1 - AMIRUL": ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"],
+            "R2 - HAZWANI": ["AJ", "BJR", "BP", "HQCT", "KB", "PK", "WM"],
+            "R3 - HARIS": ["B6", "BB", "CDR", "HL", "BG", "KL"],
+            "R4 - RAIHAN": ["GB", "GBD", "JTH", "RJ", "ST", "TPOH"],
+            "R5 - ADNIN": ["JL", "JLD", "PP", "PSPD", "SMR"],
+            "R6 - NADHIRAH": ["KS", "MC", "MLR", "TM", "TMD", "TMT"],
+            "R7 - HASANUL": ["KBKK", "KBKS", "KBTC", "KBTJ", "PC", "PT"],
+            "R8 - HAFSHAM": ["GM", "PM", "SLS", "TPT", "KKR", "PPK", "CK", "RP"]
+        };
+
+        // --- CORE VARIABLES ---
+        let rawQuestions = [];
+        let currentQuizSet = [];
+        let allResults = [];
+        let currentUser = {};
+        let quizIdx = 0;
+        let score = 0;
+        let isProcessing = false;
+        let userChoices = []; // NEW: Stores staff responses for review
+
+        window.onload = async () => {
+            document.getElementById('report-date').valueAsDate = new Date();
+            populateSelects();
+            await fetchData();
+            registerServiceWorker(); // Register the offline worker
+        };
+
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log("SW Fail", err));
+            }
+        }
+
+        function populateSelects() {
+            const sOutlet = document.getElementById('staff-outlet');
+            outlets.forEach(o => sOutlet.add(new Option(o, o)));
+            const mSelect = document.getElementById('mgr-select');
+            Object.keys(managerMapping).forEach(m => mSelect.add(new Option(m, m)));
+        }
+
+        async function fetchData() {
+            try {
+                const res = await fetch(APPS_SCRIPT_URL);
+                const data = await res.json();
+                rawQuestions = data.questions;
+                allResults = data.results;
+                
+                const topicSelector = document.getElementById('staff-topic-select');
+                topicSelector.innerHTML = '';
+                const uniqueTopics = [...new Set(rawQuestions.map(q => q.topic))];
+                
+                if(uniqueTopics.length > 0) {
+                    uniqueTopics.forEach(t => topicSelector.add(new Option(t, t)));
+                    document.getElementById('nav-status').innerText = "System Ready";
+                }
+            } catch (e) { 
+                document.getElementById('nav-status').innerText = "Offline Mode";
+            }
+        }
+
+        function showView(viewId) {
+            document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden'));
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function goHome() {
+            location.reload(); 
+        }
+
+        // --- NEW: LAST ATTEMPT CHECK ---
+        function getLastAttempt(name, topic) {
+            return allResults.filter(r => r.Name === name && r.Topic === topic)
+                             .sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp))[0];
+        }
+
+        function startQuiz() {
+            const nameInput = document.getElementById('staff-name').value.trim();
+            const selectedTopic = document.getElementById('staff-topic-select').value;
+            
+            if(!nameInput) return alert("Please enter your name");
+            if(!selectedTopic) return alert("No active training selected");
+
+            // CHECK PREVIOUS ATTEMPTS
+            const last = getLastAttempt(nameInput, selectedTopic);
+            if(last && parseInt(last.Percentage) >= 90) {
+                if(!confirm(`You already passed this quiz with ${last.Percentage}. Take it again?`)) return;
+            }
+
+            currentUser = {
+                name: nameInput,
+                outlet: document.getElementById('staff-outlet').value,
+                lang: document.getElementById('staff-lang').value,
+                topic: selectedTopic
+            };
+
+            currentQuizSet = rawQuestions.filter(q => q.topic === selectedTopic);
+            quizIdx = 0; 
+            score = 0;
+            userChoices = []; // Reset choices
+            showView('quiz');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = currentQuizSet[quizIdx];
+            document.getElementById('quiz-topic-display').innerText = q.topic;
+            document.getElementById('quiz-progress').innerText = `Question ${quizIdx+1}/${currentQuizSet.length}`;
+            document.getElementById('q-text').innerText = currentUser.lang === 'en' ? q.question_en : q.question_ms;
+            
+            const opts = document.getElementById('q-options');
+            opts.innerHTML = '';
+            
+            const optArr = currentUser.lang === 'en' ? 
+                [q.opt1_en, q.opt2_en, q.opt3_en, q.opt4_en] : 
+                [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
+
+            optArr.forEach((o, i) => {
+                if (o && o.toString().trim() !== "") {
+                    const btn = document.createElement('button');
+                    btn.className = "p-4 border-2 border-gray-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 text-left transition font-medium bg-white shadow-sm";
+                    btn.innerText = o;
+                    btn.onclick = () => handleAnswer(i);
+                    opts.appendChild(btn);
+                }
+            });
+            isProcessing = false;
+        }
+
+        async function handleAnswer(idx) {
+            if(isProcessing) return;
+            isProcessing = true;
+
+            const btns = document.querySelectorAll('#q-options button');
+            btns.forEach(b => { b.disabled = true; b.style.opacity = "0.6"; });
+
+            // Record choice for review
+            userChoices.push(idx);
+
+            if(idx == currentQuizSet[quizIdx].correct) score++;
+            
+            quizIdx++;
+            setTimeout(() => {
+                if(quizIdx < currentQuizSet.length) {
+                    renderQuestion();
+                } else {
+                    finishQuiz();
+                }
+            }, 300);
+        }
+
+        // --- UPDATED: FINISH QUIZ WITH MODAL & REVIEW ---
+        async function finishQuiz() {
+            const percNum = Math.round((score / currentQuizSet.length) * 100);
+            
+            // 1. Set Feedback Message
+            let feedback = "";
+            if (percNum >= 90) feedback = "Excellent! Outstanding knowledge!";
+            else if (percNum >= 75) feedback = "Great job! You have a solid understanding.";
+            else feedback = "Good effort, but please review the materials.";
+
+            // 2. Prepare Payload
+            const payload = {
+                action: 'save_result',
+                name: currentUser.name,
+                outlet: currentUser.outlet,
+                score: `${score}/${currentQuizSet.length}`,
+                perc: percNum + '%',
+                topic: currentUser.topic
+            };
+
+            // 3. Update UI to "Saving"
+            document.getElementById('quiz-container').innerHTML = `<div class="text-center py-10"><p class="animate-bounce text-4xl">📤</p><p class="font-bold">Saving Result...</p></div>`;
+
+            // 4. Send to Apps Script
+            try {
+                await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            } catch (e) { console.log("Offline or Error saving"); }
+
+            // 5. Build Review List
+            const list = document.getElementById('review-list');
+            list.innerHTML = '';
+            currentQuizSet.forEach((q, i) => {
+                const isCorrect = userChoices[i] == q.correct;
+                const optArr = currentUser.lang === 'en' ? [q.opt1_en, q.opt2_en, q.opt3_en, q.opt4_en] : [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
+                list.innerHTML += `
+                    <div class="p-3 rounded-lg border-l-4 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}">
+                        <p class="text-xs font-bold ${isCorrect ? 'text-green-700' : 'text-red-700'}">Question ${i+1}</p>
+                        <p class="text-sm my-1">${currentUser.lang === 'en' ? q.question_en : q.question_ms}</p>
+                        <p class="text-[10px]">
+                            <span class="text-gray-500">Correct:</span> <span class="font-bold text-green-700">${optArr[q.correct]}</span>
+                            ${!isCorrect ? `<br><span class="text-gray-500">Your Answer:</span> <span class="font-bold text-red-700">${optArr[userChoices[i]]}</span>` : ''}
+                        </p>
+                    </div>`;
+            });
+
+            // 6. Show Result Modal
+            document.getElementById('final-score-text').innerText = `${score}/${currentQuizSet.length}`;
+            document.getElementById('final-perc-text').innerText = `(${percNum}%)`;
+            document.getElementById('final-feedback').innerText = feedback;
+            showView('success');
+        }
+
+        function toggleReview() {
+            const section = document.getElementById('review-section');
+            const btn = document.getElementById('btn-toggle-review');
+            const isHidden = section.classList.contains('hidden');
+            section.classList.toggle('hidden');
+            btn.innerText = isHidden ? "Close Review" : "Review Answers";
+        }
+
+        // --- MANAGER & SUPERVISOR LOGIC ---
+        function updateMgrOutlets() {
+            const m = document.getElementById('mgr-select').value;
+            const oSel = document.getElementById('mgr-outlet');
+            oSel.innerHTML = '';
+            if(m) managerMapping[m].forEach(o => oSel.add(new Option(o, o)));
+        }
+
+        function loginManager() {
+            if(document.getElementById('mgr-pass').value !== "1234") return alert("Invalid Password");
+            const mgr = document.getElementById('mgr-select').value;
+            const outlet = document.getElementById('mgr-outlet').value;
+            if(!mgr || !outlet) return alert("Select Manager and Outlet");
+            document.getElementById('mgr-info-display').innerText = `Logged in as: ${mgr} | Outlet: ${outlet}`;
+            const staffInOutlet = allResults.filter(r => r.Outlet === outlet);
+            document.getElementById('stat-completed').innerText = staffInOutlet.length;
+            const sSel = document.getElementById('rep-staff');
+            sSel.innerHTML = '<option value="">-- Choose Staff --</option>';
+            staffInOutlet.forEach(s => sSel.add(new Option(s.Name, s.Name)));
+            showView('manager-form');
+        }
+
+        function updateStaffScoreDisplay() {
+            const name = document.getElementById('rep-staff').value;
+            const res = allResults.find(r => r.Name === name);
+            const display = document.getElementById('rep-score-display');
+            if(res) display.innerText = `${res.Score} (${res.Percentage})`;
+            else display.innerText = "-";
+        }
+
+        async function submitReport() {
+            const btn = document.getElementById('btn-submit-report');
+            if(isProcessing) return;
+            const payload = {
+                action: 'save_report',
+                manager: document.getElementById('mgr-select').value,
+                outlet: document.getElementById('mgr-outlet').value,
+                staffName: document.getElementById('rep-staff').value,
+                staffScore: document.getElementById('rep-score-display').innerText,
+                trainTitle: document.getElementById('rep-title').value,
+                level: document.getElementById('rep-level').value,
+                comments: document.getElementById('rep-comments').value,
+                focus: document.getElementById('rep-focus').value,
+                gaps: document.getElementById('rep-gaps').value,
+                rec: document.getElementById('rep-rec').value
+            };
+            if(!payload.staffName) return alert("Select a staff member");
+            isProcessing = true;
+            btn.innerText = "Submitting...";
+            try {
+                await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                alert("Report successfully saved!");
+                goHome();
+            } catch (e) {
+                alert("Error submitting. Try again.");
+                isProcessing = false;
+                btn.innerText = "Submit Report";
+            }
+        }
+
+        function loginSupervisor() {
+            if(document.getElementById('sup-pass').value !== "admin") return alert("Access Denied");
+            showView('supervisor-dash');
+            renderDashTable();
+        }
+
+        function renderDashTable() {
+            const searchTerm = document.getElementById('filter-name').value.toLowerCase();
+            const filtered = allResults.filter(r => r.Name.toLowerCase().includes(searchTerm));
+            document.getElementById('dash-staff').innerText = filtered.length;
+            document.getElementById('dash-outlets').innerText = [...new Set(filtered.map(r => r.Outlet))].length;
+            const sum = filtered.reduce((acc, curr) => acc + parseInt(curr.Percentage), 0);
+            document.getElementById('dash-avg').innerText = filtered.length ? Math.round(sum/filtered.length) + "%" : "0%";
+            const body = document.getElementById('dash-table-body');
+            body.innerHTML = '';
+            filtered.forEach(r => {
+                body.innerHTML += `<tr class="border-b">
+                    <td class="p-3 text-gray-500">${new Date(r.Timestamp).toLocaleDateString()}</td>
+                    <td class="p-3 font-bold">${r.Name}</td>
+                    <td class="p-3">${r.Outlet}</td>
+                    <td class="p-3 text-indigo-600 font-bold">${r.Percentage}</td>
+                    <td class="p-3 text-xs text-gray-400">${r.Topic}</td>
+                </tr>`;
+            });
+        }
+
+        function exportToCSV() {
+            if(allResults.length === 0) return alert("No data");
+            let csvContent = "data:text/csv;charset=utf-8,Timestamp,Name,Outlet,Score,Percentage,Topic\n";
+            allResults.forEach(r => { csvContent += `${r.Timestamp},${r.Name},${r.Outlet},${r.Score},${r.Percentage},${r.Topic}\n`; });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "Retail_Report.csv");
+            link.click();
+        }
+    </script>
+</body>
+</html>
