@@ -17,7 +17,6 @@
         .no-select { user-select: none; }
         .hidden { display: none !important; }
         
-        /* Loading Animation */
         #loader-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { width: 50px; height: 50px; border: 5px solid #e0e7ff; border-top: 5px solid #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -213,6 +212,7 @@
                     <select id="sup-filter-outlet" onchange="renderDashTable()" class="text-xs border rounded p-2 bg-gray-50 font-bold">
                         <option value="ALL">All Outlets</option>
                     </select>
+                    <button onclick="downloadCSV()" class="text-xs bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition">📥 Download CSV</button>
                     <button onclick="goHome()" class="text-xs bg-gray-100 border border-gray-300 px-4 py-2 rounded-lg font-bold">Logout</button>
                 </div>
             </div>
@@ -231,8 +231,7 @@
                                 <th class="p-3 rounded-tr-lg">Correct Reference</th>
                             </tr>
                         </thead>
-                        <tbody id="gap-analysis-body">
-                             </tbody>
+                        <tbody id="gap-analysis-body"></tbody>
                     </table>
                 </div>
             </div>
@@ -258,7 +257,7 @@
         </div>
 
         <footer class="mt-12 mb-6 text-center">
-            <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">RetailTraining Pro v3.1.0</span>
+            <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">RetailTraining Pro v3.1.1</span>
         </footer>
 
     </main>
@@ -280,13 +279,13 @@
         let rawQuestions = [];
         let allResults = [];
         let allReports = [];
-        let allWrongAnswers = []; // Granular tracking data
+        let allWrongAnswers = []; 
         let currentUser = {};
         let currentQuizSet = [];
         let quizIdx = 0;
         let score = 0;
         let isProcessing = false;
-        let wrongAnswersPayload = []; // Compiled list of missed items
+        let wrongAnswersPayload = []; 
 
         window.onload = async () => {
             populateSelects();
@@ -403,11 +402,9 @@
             isProcessing = true;
             const q = currentQuizSet[quizIdx];
             const optArr = currentUser.lang === 'en' ? [q.opt1_en, q.opt2_en, q.opt3_en, q.opt4_en] : [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
-
             const isCorrect = idx == q.correct;
 
             if(!isCorrect) {
-                // TRACK INDIVIDUAL WRONG ANSWER
                 wrongAnswersPayload.push({
                     qId: q.id || (quizIdx + 1),
                     qText: q.question_en,
@@ -443,22 +440,17 @@
                 score: `${score}/${currentQuizSet.length}`, 
                 perc: perc + '%', 
                 topic: currentUser.topic,
-                wrongAnswers: wrongAnswersPayload // Sending granular tracking data
+                wrongAnswers: wrongAnswersPayload 
             };
             
-            await fetch(APPS_SCRIPT_URL, { 
-                method: 'POST', 
-                mode: 'no-cors', 
-                body: JSON.stringify(payload) 
-            });
-            
+            await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             showLoader(false);
             showView('success');
             document.getElementById('final-score-text').innerText = payload.score;
             document.getElementById('final-perc-text').innerText = `(${payload.perc})`;
         }
 
-        // --- MANAGER LOGIC (UNCHANGED BUT INTEGRATED) ---
+        // --- MANAGER LOGIC ---
         function updateMgrOutlets() {
             const m = document.getElementById('mgr-select').value;
             const oSel = document.getElementById('mgr-outlet');
@@ -506,7 +498,6 @@
                 trainTitle: document.getElementById('rep-title').value,
                 level: document.getElementById('rep-level').value,
                 comments: document.getElementById('rep-comments').value,
-                focus: "", 
                 gaps: document.getElementById('rep-gaps').value,
                 rec: document.getElementById('rep-rec').value
             };
@@ -518,7 +509,7 @@
             goHome();
         }
 
-        // --- SUPERVISOR DASHBOARD (GRANULAR TRACKING) ---
+        // --- SUPERVISOR DASHBOARD ---
         async function loginSupervisor() {
             if(document.getElementById('sup-pass').value !== "admin") return alert("Unauthorized");
             showLoader(true);
@@ -554,18 +545,13 @@
                         <td class="p-3 text-gray-400 italic font-medium">${report.Manager || '-'}</td>
                     </tr>`;
             });
-
             renderGapAnalysis(filter);
         }
 
         function renderGapAnalysis(filter) {
             const gapBody = document.getElementById('gap-analysis-body');
             gapBody.innerHTML = '';
-            
-            // Filter wrong answers by outlet
             const filteredWrong = filter === "ALL" ? allWrongAnswers : allWrongAnswers.filter(w => w.Outlet === filter);
-            
-            // Count occurrences of each question ID
             const gapStats = {};
             filteredWrong.forEach(w => {
                 const key = w["Question ID"] || w.qId;
@@ -581,7 +567,6 @@
             });
 
             const sortedGaps = Object.values(gapStats).sort((a,b) => b.count - a.count);
-
             if(sortedGaps.length === 0) {
                 gapBody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-400 italic">No granular gap data found.</td></tr>';
                 return;
@@ -591,20 +576,44 @@
                 gapBody.innerHTML += `
                     <tr class="border-b bg-white hover:bg-red-50 transition-colors">
                         <td class="p-3 font-bold text-indigo-700">${gap.topic}</td>
-                        <td class="p-3 text-gray-700">
-                            <div class="font-bold text-[10px] text-gray-400 mb-1">ID: ${gap.text.substring(0,10)}...</div>
-                            ${gap.text}
-                        </td>
-                        <td class="p-3 text-center">
-                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full font-black">
-                                ${gap.count} Failed
-                            </span>
-                        </td>
-                        <td class="p-3 text-emerald-600 font-medium italic text-[11px]">
-                            Ref: ${gap.correct}
-                        </td>
+                        <td class="p-3 text-gray-700 font-medium">${gap.text}</td>
+                        <td class="p-3 text-center font-bold text-red-600">${gap.count}</td>
+                        <td class="p-3 text-green-600 font-bold italic">${gap.correct}</td>
                     </tr>`;
             });
+        }
+
+        // --- CSV EXPORT LOGIC ---
+        function downloadCSV() {
+            const filter = document.getElementById('sup-filter-outlet').value;
+            const filteredResults = filter === "ALL" ? allResults : allResults.filter(r => (r.Outlet || r.outlet) === filter);
+            
+            let csvContent = "data:text/csv;charset=utf-8,Staff Name,Outlet,Quiz Score,Percentage,Topic,Skill Level,Gaps,Manager\n";
+            
+            filteredResults.forEach(r => {
+                const sName = (r.Name || r.name || "").toString().trim().toUpperCase();
+                const report = allReports.find(rep => (rep["Staff Name"] || rep.staffName || "").toString().trim().toUpperCase() === sName) || {};
+                
+                const row = [
+                    sName,
+                    r.Outlet || r.outlet,
+                    r.Score || r.score,
+                    r.Percentage || r.perc,
+                    r.Topic || r.topic,
+                    report.Level || "Pending",
+                    (report.Gaps || "-").replace(/,/g, ";"), // Clean commas to prevent CSV breakage
+                    report.Manager || "-"
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Training_Report_${filter}_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
