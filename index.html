@@ -93,11 +93,11 @@
                 <h3 id="q-text" class="text-xl font-semibold mb-6"></h3>
                 <div id="q-options" class="grid grid-cols-1 gap-4"></div>
                 <div id="next-btn-container" class="hidden mt-8 border-t pt-6">
-                    <button onclick="nextQuestion()" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
+                    <button id="next-btn-el" onclick="nextQuestion()" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
                         Next Question <span>➜</span>
                     </button>
                 </div>
-                <div onclick="showView('staff-login')" class="btn-back mt-6 opacity-60 hover:opacity-100">← Exit Quiz</div>
+                <div onclick="goHome()" class="btn-back mt-6 opacity-60 hover:opacity-100">← Exit Quiz</div>
             </div>
         </div>
 
@@ -234,7 +234,7 @@
             <div class="flex flex-col items-center justify-center gap-1">
                 <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">RetailTraining Pro</span>
                 <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-[9px] font-bold rounded-md">v2.3.0-PRO</span>
+                    <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-[9px] font-bold rounded-md">v2.4.1-STABLE</span>
                     <span class="text-[9px] text-gray-400">Last Update: Jan 2026</span>
                 </div>
             </div>
@@ -279,8 +279,10 @@
         }
 
         async function fetchData() {
+            document.getElementById('nav-status').innerText = "Syncing Data...";
             try {
-                const res = await fetch(APPS_SCRIPT_URL);
+                // ADDED CACHE BUSTER (?t=) TO FIX MANAGER "0" ISSUE
+                const res = await fetch(APPS_SCRIPT_URL + "?t=" + new Date().getTime());
                 const data = await res.json();
                 rawQuestions = data.questions;
                 allResults = data.results;
@@ -324,7 +326,18 @@
 
         function renderQuestion() {
             isProcessing = false;
+            const nextBtnEl = document.getElementById('next-btn-el');
             document.getElementById('next-btn-container').classList.add('hidden');
+            
+            // UPDATED: Dynamic "Finish" Button text
+            if (quizIdx === currentQuizSet.length - 1) {
+                nextBtnEl.innerHTML = `Finish Quiz & Submit 🏁`;
+                nextBtnEl.classList.replace('bg-indigo-600', 'bg-green-600');
+            } else {
+                nextBtnEl.innerHTML = `Next Question <span>➜</span>`;
+                nextBtnEl.classList.replace('bg-green-600', 'bg-indigo-600');
+            }
+
             const q = currentQuizSet[quizIdx];
             document.getElementById('quiz-topic-display').innerText = q.topic;
             document.getElementById('quiz-progress').innerText = `Question ${quizIdx+1}/${currentQuizSet.length}`;
@@ -348,15 +361,17 @@
         }
 
         function handleAnswer(idx) {
+            // ANTI-CHEAT: Prevent clicking after answer is locked
             if(isProcessing) return;
             isProcessing = true; 
+
             const q = currentQuizSet[quizIdx];
             const correctIdx = q.correct;
             const btns = document.querySelectorAll('#q-options button');
-            userChoices.push(idx);
+            userChoices[quizIdx] = idx; // Lock choice into specific array index
 
             btns.forEach((btn, i) => {
-                btn.disabled = true;
+                btn.disabled = true; // Lock all buttons immediately
                 if (i == correctIdx) btn.classList.add('answer-correct');
                 else if (i == idx) btn.classList.add('answer-wrong');
                 else btn.style.opacity = "0.5";
@@ -385,7 +400,7 @@
                 topic: currentUser.topic
             };
 
-            document.getElementById('quiz-container').innerHTML = `<div class="text-center py-10"><p>Submitting Result...</p></div>`;
+            document.getElementById('quiz-container').innerHTML = `<div class="text-center py-10"><p class="font-bold text-indigo-600 animate-pulse">Saving your results to the system...</p></div>`;
 
             try {
                 await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
@@ -419,19 +434,21 @@
             if(m) managerMapping[m].forEach(o => oSel.add(new Option(o, o)));
         }
 
-        // FIX: Manager Search & Scoring matching
-        function loginManager() {
+        async function loginManager() {
             if(document.getElementById('mgr-pass').value !== "1234") return alert("Invalid Password");
+            
+            // FIX: Re-fetch data upon login to ensure latest submissions appear
+            await fetchData(); 
+
             showView('manager-form');
             const outlet = document.getElementById('mgr-outlet').value;
             
-            // Fix: Matching outlet name with sanitized key 'outlet'
-            const staffInOutlet = allResults.filter(r => r.outlet === outlet);
+            // Matches outlet name with case-insensitive check
+            const staffInOutlet = allResults.filter(r => r.outlet && r.outlet.toString().toUpperCase() === outlet.toUpperCase());
             
             const sSel = document.getElementById('rep-staff');
-            sSel.innerHTML = '<option value="">-- Choose Staff --</option>';
+            sSel.innerHTML = `<option value="">-- Choose Staff (${staffInOutlet.length} found) --</option>`;
             
-            // Unique staff list for dropdown
             const uniqueStaff = [...new Set(staffInOutlet.map(s => s.name))];
             uniqueStaff.forEach(name => sSel.add(new Option(name, name)));
 
@@ -441,7 +458,6 @@
 
         function updateStaffScoreDisplay() {
             const name = document.getElementById('rep-staff').value.trim().toLowerCase();
-            // Find most recent result for staff member regardless of casing
             const res = allResults.filter(r => r.name && r.name.toString().trim().toLowerCase() === name).pop();
             document.getElementById('rep-score-display').innerText = res ? `${res.score} (${res.perc})` : "-";
         }
@@ -475,7 +491,7 @@
             const filter = document.getElementById('filter-name').value.toLowerCase();
             body.innerHTML = '';
             
-            const filtered = allResults.filter(r => r.name.toLowerCase().includes(filter));
+            const filtered = allResults.filter(r => r.name && r.name.toLowerCase().includes(filter));
 
             document.getElementById('dash-staff').innerText = [...new Set(allResults.map(r => r.name))].length;
             document.getElementById('dash-outlets').innerText = [...new Set(allResults.map(r => r.outlet))].length;
