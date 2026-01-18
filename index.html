@@ -17,7 +17,6 @@
         .no-select { user-select: none; }
         .hidden { display: none; }
         
-        /* Animation Styles */
         .answer-correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #14532d !important; animation: pulse-green 0.5s; }
         .answer-wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #7f1d1d !important; }
         @keyframes pulse-green {
@@ -93,13 +92,11 @@
             <div id="quiz-container">
                 <h3 id="q-text" class="text-xl font-semibold mb-6"></h3>
                 <div id="q-options" class="grid grid-cols-1 gap-4"></div>
-                
                 <div id="next-btn-container" class="hidden mt-8 border-t pt-6">
                     <button onclick="nextQuestion()" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
                         Next Question <span>➜</span>
                     </button>
                 </div>
-
                 <div onclick="showView('staff-login')" class="btn-back mt-6 opacity-60 hover:opacity-100">← Exit Quiz</div>
             </div>
         </div>
@@ -221,7 +218,6 @@
             <div class="glass p-6 rounded-2xl shadow-lg">
                 <div class="flex flex-wrap gap-4 mb-6 items-center">
                     <input type="text" id="filter-name" placeholder="Search staff..." class="p-2 border rounded flex-grow" onkeyup="renderDashTable()">
-                    <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold">Export CSV</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -341,7 +337,6 @@
                 [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
 
             optArr.forEach((o, i) => {
-                // FIXED logic: Render everything that isn't null/undefined, including True/False
                 if (o !== undefined && o !== null && o.toString().trim() !== "") {
                     const btn = document.createElement('button');
                     btn.className = "p-4 border-2 border-gray-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 text-left transition font-medium bg-white shadow-sm";
@@ -355,7 +350,6 @@
         function handleAnswer(idx) {
             if(isProcessing) return;
             isProcessing = true; 
-
             const q = currentQuizSet[quizIdx];
             const correctIdx = q.correct;
             const btns = document.querySelectorAll('#q-options button');
@@ -363,34 +357,22 @@
 
             btns.forEach((btn, i) => {
                 btn.disabled = true;
-                if (i == correctIdx) {
-                    btn.classList.add('answer-correct');
-                } else if (i == idx && idx != correctIdx) {
-                    btn.classList.add('answer-wrong');
-                } else {
-                    btn.style.opacity = "0.5";
-                }
+                if (i == correctIdx) btn.classList.add('answer-correct');
+                else if (i == idx) btn.classList.add('answer-wrong');
+                else btn.style.opacity = "0.5";
             });
 
             if(idx == correctIdx) score++;
-            
-            // DELAY: 0.8 seconds before the "Next" button appears
-            setTimeout(() => {
-                document.getElementById('next-btn-container').classList.remove('hidden');
-            }, 800);
+            setTimeout(() => { document.getElementById('next-btn-container').classList.remove('hidden'); }, 800);
         }
 
         function nextQuestion() {
             quizIdx++;
-            if(quizIdx < currentQuizSet.length) {
-                renderQuestion();
-            } else {
-                finishQuiz();
-            }
+            if(quizIdx < currentQuizSet.length) renderQuestion();
+            else finishQuiz();
         }
 
         async function finishQuiz() {
-            // FIXED: Math.round for whole percentage display
             const percNum = Math.round((score / currentQuizSet.length) * 100);
             let feedback = percNum >= 90 ? "Excellent!" : percNum >= 75 ? "Great job!" : "Good effort!";
 
@@ -428,10 +410,7 @@
             showView('success');
         }
 
-        function toggleReview() {
-            const section = document.getElementById('review-section');
-            section.classList.toggle('hidden');
-        }
+        function toggleReview() { document.getElementById('review-section').classList.toggle('hidden'); }
 
         function updateMgrOutlets() {
             const m = document.getElementById('mgr-select').value;
@@ -440,20 +419,31 @@
             if(m) managerMapping[m].forEach(o => oSel.add(new Option(o, o)));
         }
 
+        // FIX: Manager Search & Scoring matching
         function loginManager() {
             if(document.getElementById('mgr-pass').value !== "1234") return alert("Invalid Password");
             showView('manager-form');
             const outlet = document.getElementById('mgr-outlet').value;
-            const staffInOutlet = allResults.filter(r => r.Outlet === outlet);
+            
+            // Fix: Matching outlet name with sanitized key 'outlet'
+            const staffInOutlet = allResults.filter(r => r.outlet === outlet);
+            
             const sSel = document.getElementById('rep-staff');
             sSel.innerHTML = '<option value="">-- Choose Staff --</option>';
-            staffInOutlet.forEach(s => sSel.add(new Option(s.Name, s.Name)));
+            
+            // Unique staff list for dropdown
+            const uniqueStaff = [...new Set(staffInOutlet.map(s => s.name))];
+            uniqueStaff.forEach(name => sSel.add(new Option(name, name)));
+
+            document.getElementById('stat-completed').innerText = staffInOutlet.length;
+            document.getElementById('mgr-info-display').innerText = `Manager: ${document.getElementById('mgr-select').value} | Outlet: ${outlet}`;
         }
 
         function updateStaffScoreDisplay() {
-            const name = document.getElementById('rep-staff').value;
-            const res = allResults.find(r => r.Name === name);
-            document.getElementById('rep-score-display').innerText = res ? `${res.Score} (${res.Percentage})` : "-";
+            const name = document.getElementById('rep-staff').value.trim().toLowerCase();
+            // Find most recent result for staff member regardless of casing
+            const res = allResults.filter(r => r.name && r.name.toString().trim().toLowerCase() === name).pop();
+            document.getElementById('rep-score-display').innerText = res ? `${res.score} (${res.perc})` : "-";
         }
 
         async function submitReport() {
@@ -482,18 +472,19 @@
 
         function renderDashTable() {
             const body = document.getElementById('dash-table-body');
+            const filter = document.getElementById('filter-name').value.toLowerCase();
             body.innerHTML = '';
             
-            // Dashboard summary stats
-            document.getElementById('dash-staff').innerText = [...new Set(allResults.map(r => r.Name))].length;
-            document.getElementById('dash-outlets').innerText = [...new Set(allResults.map(r => r.Outlet))].length;
+            const filtered = allResults.filter(r => r.name.toLowerCase().includes(filter));
+
+            document.getElementById('dash-staff').innerText = [...new Set(allResults.map(r => r.name))].length;
+            document.getElementById('dash-outlets').innerText = [...new Set(allResults.map(r => r.outlet))].length;
             document.getElementById('dash-reps').innerText = allResults.length;
 
-            allResults.forEach(r => {
-                body.innerHTML += `<tr class="border-b"><td class="p-3">${r.Timestamp}</td><td class="p-3 font-bold">${r.Name}</td><td class="p-3">${r.Outlet}</td><td class="p-3 text-indigo-600 font-bold">${r.Percentage}</td><td class="p-3 text-xs">${r.Topic}</td></tr>`;
+            filtered.forEach(r => {
+                body.innerHTML += `<tr class="border-b"><td class="p-3">${r.timestamp}</td><td class="p-3 font-bold">${r.name}</td><td class="p-3">${r.outlet}</td><td class="p-3 text-indigo-600 font-bold">${r.perc}</td><td class="p-3 text-xs">${r.topic}</td></tr>`;
             });
         }
     </script>
 </body>
 </html>
-
