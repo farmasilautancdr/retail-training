@@ -93,8 +93,8 @@
                 <h3 id="q-text" class="text-xl font-semibold mb-6"></h3>
                 <div id="q-options" class="grid grid-cols-1 gap-4"></div>
                 <div id="next-btn-container" class="hidden mt-8 border-t pt-6">
-                    <button id="next-btn-el" onclick="nextQuestion()" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
-                        Next Question <span>➜</span>
+                    <button id="next-btn-el" onclick="nextQuestion()" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition-all">
+                        <span id="next-btn-text">Next Question</span> <span id="next-btn-icon">➜</span>
                     </button>
                 </div>
             </div>
@@ -271,12 +271,10 @@
 
                 const uniqueTopics = [...new Set(rawQuestions.map(q => q.topic))];
                 
-                // Populate Staff Topic Selector
                 const topicSelector = document.getElementById('staff-topic-select');
                 topicSelector.innerHTML = '';
                 uniqueTopics.forEach(t => topicSelector.add(new Option(t, t)));
                 
-                // Populate Manager Training Title Selector
                 const mgrTopicSelector = document.getElementById('rep-title');
                 mgrTopicSelector.innerHTML = '<option value="">-- Choose Training --</option>';
                 uniqueTopics.forEach(t => mgrTopicSelector.add(new Option(t, t)));
@@ -295,10 +293,17 @@
 
         // --- STAFF FLOW ---
         function startQuiz() {
-            const name = document.getElementById('staff-name').value.trim();
+            const nameInput = document.getElementById('staff-name').value.trim();
             const topic = document.getElementById('staff-topic-select').value;
-            if(!name) return alert("Enter Name");
-            currentUser = { name, outlet: document.getElementById('staff-outlet').value, lang: document.getElementById('staff-lang').value, topic };
+            if(!nameInput) return alert("Enter Name");
+            
+            currentUser = { 
+                name: nameInput.toUpperCase(), 
+                outlet: document.getElementById('staff-outlet').value, 
+                lang: document.getElementById('staff-lang').value, 
+                topic 
+            };
+            
             currentQuizSet = rawQuestions.filter(q => q.topic === topic);
             quizIdx = 0; score = 0;
             showView('quiz');
@@ -308,13 +313,32 @@
         function renderQuestion() {
             isProcessing = false;
             document.getElementById('next-btn-container').classList.add('hidden');
+            
             const q = currentQuizSet[quizIdx];
+            const isLast = quizIdx === currentQuizSet.length - 1;
+
+            // Update Button Text for Last Question
+            const nextBtn = document.getElementById('next-btn-el');
+            const nextText = document.getElementById('next-btn-text');
+            const nextIcon = document.getElementById('next-btn-icon');
+
+            if(isLast) {
+                nextBtn.classList.replace('bg-indigo-600', 'bg-green-600');
+                nextText.innerText = "Submit Quiz Final";
+                nextIcon.innerText = "🏁";
+            } else {
+                nextBtn.classList.replace('bg-green-600', 'bg-indigo-600');
+                nextText.innerText = "Next Question";
+                nextIcon.innerText = "➜";
+            }
+
             document.getElementById('quiz-progress').innerText = `Question ${quizIdx+1}/${currentQuizSet.length}`;
             document.getElementById('q-text').innerText = currentUser.lang === 'en' ? q.question_en : q.question_ms;
             
             const opts = document.getElementById('q-options');
             opts.innerHTML = '';
             const optArr = currentUser.lang === 'en' ? [q.opt1_en, q.opt2_en, q.opt3_en, q.opt4_en] : [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
+            
             optArr.forEach((o, i) => {
                 if(o) {
                     const btn = document.createElement('button');
@@ -348,7 +372,14 @@
 
         async function finishQuiz() {
             const perc = Math.round((score / currentQuizSet.length) * 100);
-            const payload = { action: 'save_result', name: currentUser.name, outlet: currentUser.outlet, score: `${score}/${currentQuizSet.length}`, perc: perc + '%', topic: currentUser.topic };
+            const payload = { 
+                action: 'save_result', 
+                name: currentUser.name, 
+                outlet: currentUser.outlet, 
+                score: `${score}/${currentQuizSet.length}`, 
+                perc: perc + '%', 
+                topic: currentUser.topic 
+            };
             showView('success');
             document.getElementById('final-score-text').innerText = payload.score;
             document.getElementById('final-perc-text').innerText = `(${payload.perc})`;
@@ -359,36 +390,43 @@
         function updateMgrOutlets() {
             const m = document.getElementById('mgr-select').value;
             const oSel = document.getElementById('mgr-outlet');
-            oSel.innerHTML = '';
+            oSel.innerHTML = '<option value="">Select Outlet</option>';
             if(m) managerMapping[m].forEach(o => oSel.add(new Option(o, o)));
         }
 
         async function loginManager() {
-            if(document.getElementById('mgr-pass').value !== "1234") return alert("Wrong Pass");
-            await fetchData();
-            const outlet = document.getElementById('mgr-outlet').value;
-            const staffInOutlet = allResults.filter(r => r.outlet === outlet);
+            if(document.getElementById('mgr-pass').value !== "1234") return alert("Wrong Password");
+            
+            document.getElementById('nav-status').innerText = "Syncing Latest Results...";
+            await fetchData(); // Force refresh to get latest staff scores
+            
+            const selectedOutlet = document.getElementById('mgr-outlet').value;
+            
+            // Fix connection logic: find staff who took quiz in this manager's outlet
+            const staffInOutlet = allResults.filter(r => r.Outlet === selectedOutlet || r.outlet === selectedOutlet);
             
             if(staffInOutlet.length === 0) {
-                alert("No quiz results found for staff in " + outlet);
+                alert("No quiz results found for staff in " + selectedOutlet);
             }
 
             const sSel = document.getElementById('rep-staff');
             sSel.innerHTML = '<option value="">-- Select Staff --</option>';
-            // Get unique names who have completed quizzes
-            const uniqueStaff = [...new Set(staffInOutlet.map(s => s.name))];
+            
+            // Map names carefully to prevent duplicates
+            const uniqueStaff = [...new Set(staffInOutlet.map(s => (s.Name || s.name).trim().toUpperCase()))];
             uniqueStaff.forEach(name => sSel.add(new Option(name, name)));
             
-            document.getElementById('mgr-info-display').innerText = `Manager: ${document.getElementById('mgr-select').value} | Outlet: ${outlet}`;
+            document.getElementById('mgr-info-display').innerText = `Manager: ${document.getElementById('mgr-select').value} | Outlet: ${selectedOutlet}`;
             showView('manager-form');
         }
 
         function updateStaffScoreDisplay() {
-            const name = document.getElementById('rep-staff').value;
-            const res = allResults.filter(r => r.name === name).pop();
-            document.getElementById('rep-score-display').innerText = res ? res.perc : "-";
-            // Auto-select topic if possible
-            if(res && res.topic) document.getElementById('rep-title').value = res.topic;
+            const selectedName = document.getElementById('rep-staff').value;
+            // Find most recent result for this staff
+            const res = allResults.filter(r => (r.Name || r.name).toUpperCase() === selectedName).pop();
+            
+            document.getElementById('rep-score-display').innerText = res ? (res.Percentage || res.perc) : "-";
+            if(res && (res.Topic || res.topic)) document.getElementById('rep-title').value = (res.Topic || res.topic);
         }
 
         async function submitReport() {
@@ -408,15 +446,16 @@
             
             if(!payload.staffName || !payload.trainTitle) return alert("Please select staff and training title");
 
-            document.getElementById('nav-status').innerText = "Submitting...";
+            document.getElementById('nav-status').innerText = "Submitting Report...";
             await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             alert("Assessment Submitted Successfully!"); 
             goHome();
         }
 
         // --- SUPERVISOR FLOW ---
-        function loginSupervisor() {
+        async function loginSupervisor() {
             if(document.getElementById('sup-pass').value !== "admin") return alert("Denied");
+            await fetchData();
             showView('supervisor-dash');
             renderDashTable();
         }
@@ -424,13 +463,17 @@
         function renderDashTable() {
             const body = document.getElementById('dash-table-body');
             body.innerHTML = '';
+            
             allResults.forEach(r => {
-                const report = allReports.find(rep => (rep["Staff Name"] === r.name || rep.staffName === r.name)) || {};
+                const staffNameClean = (r.Name || r.name).toUpperCase();
+                // Find matching report from manager
+                const report = allReports.find(rep => (rep["Staff Name"] || rep.staffName || "").toUpperCase() === staffNameClean) || {};
+                
                 body.innerHTML += `
                     <tr class="border-b hover:bg-white">
-                        <td class="p-3 font-bold text-gray-800">${r.name}</td>
-                        <td class="p-3 text-gray-500">${r.outlet}</td>
-                        <td class="p-3 text-indigo-600 font-bold">${r.perc}</td>
+                        <td class="p-3 font-bold text-gray-800">${staffNameClean}</td>
+                        <td class="p-3 text-gray-500">${r.Outlet || r.outlet}</td>
+                        <td class="p-3 text-indigo-600 font-bold">${r.Percentage || r.perc}</td>
                         <td class="p-3 font-bold text-orange-600">${report.Level || report.level || '-'}</td>
                         <td class="p-3 text-gray-600 truncate max-w-[150px]">${report.Gaps || report.gaps || 'Pending Manager'}</td>
                         <td class="p-3 text-gray-400 italic">${report.Manager || report.manager || '-'}</td>
@@ -441,10 +484,12 @@
         function downloadCSV() {
             let csv = "Date,Staff Name,Outlet,Topic,Quiz Score,Manager,Skill Level,Competency Comments,Housebrand Focus,Gaps,Recommendations\n";
             allResults.forEach(r => {
-                const report = allReports.find(rep => (rep["Staff Name"] === r.name || rep.staffName === r.name)) || {};
+                const staffNameClean = (r.Name || r.name).toUpperCase();
+                const report = allReports.find(rep => (rep["Staff Name"] || rep.staffName || "").toUpperCase() === staffNameClean) || {};
                 const clean = (val) => `"${(val || "").toString().replace(/"/g, '""')}"`;
+                
                 const row = [
-                    clean(r.timestamp), clean(r.name), clean(r.outlet), clean(r.topic), clean(r.perc),
+                    clean(r.Timestamp || r.timestamp), clean(staffNameClean), clean(r.Outlet || r.outlet), clean(r.Topic || r.topic), clean(r.Percentage || r.perc),
                     clean(report.Manager || report.manager || "-"),
                     clean(report.Level || report.level || "-"),
                     clean(report.Comments || report.comments || "-"),
