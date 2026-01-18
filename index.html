@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RetailTraining Pro | Supervisor Dashboard</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        /* ... rest of your style ... */
         body { font-family: 'Inter', sans-serif; background: #f3f4f6; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .role-card:hover { transform: translateY(-5px); transition: all 0.3s ease; }
@@ -60,18 +64,27 @@
         </div>
 
         <div id="view-staff-login" class="hidden glass p-8 rounded-2xl shadow-xl max-w-md mx-auto">
-            <h2 class="text-2xl font-bold mb-6 text-center">Staff Entry</h2>
-            <div class="space-y-4">
-                <select id="staff-lang" class="w-full p-3 border rounded-lg"><option value="en">English</option><option value="ms">Bahasa Melayu</option></select>
-                <input type="text" id="staff-name" class="w-full p-3 border rounded-lg" placeholder="Enter Full Name">
-                <select id="staff-outlet" class="w-full p-3 border rounded-lg"></select>
-                <select id="staff-topic-select" class="w-full p-3 border-2 border-indigo-100 rounded-lg font-bold text-indigo-700">
-                    <option value="">Loading active topics...</option>
-                </select>
-                <button onclick="startQuiz()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">Start Quiz</button>
-                <div onclick="goHome()" class="btn-back">← Back</div>
-            </div>
-        </div>
+    <button onclick="goHome()" class="text-gray-400 hover:text-indigo-600 flex items-center gap-1 mb-4 text-sm font-medium transition-colors cursor-pointer">
+        ← Back to Roles
+    </button>
+    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Staff Quiz Entry</h2>
+
+    <div class="space-y-4">
+        <select id="staff-lang" class="w-full p-3 border rounded-lg">
+            <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
+        </select>
+        <input type="text" id="staff-name" class="w-full p-3 border rounded-lg" placeholder="Enter Full Name">
+        <select id="staff-outlet" class="w-full p-3 border rounded-lg"></select>
+        <select id="staff-topic-select" class="w-full p-3 border-2 border-indigo-100 rounded-lg font-bold text-indigo-700">
+            <option value="">Loading active topics...</option>
+        </select>
+        
+        <button onclick="startQuiz()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">
+            Start Quiz
+        </button>
+    </div>
+</div>
 
         <div id="view-quiz" class="hidden glass p-8 rounded-2xl shadow-xl">
             <div class="flex justify-between items-center mb-6">
@@ -215,9 +228,13 @@
             "R8 - HAFSHAM": ["GM", "PM", "SLS", "TPT", "KKR", "PPK", "CK", "RP"]
         };
 
-        let rawQuestions = [], allResults = [], allReports = [], allWrongAnswers = [];
-        let currentUser = {}, currentQuizSet = [], quizIdx = 0, score = 0, wrongAnswersPayload = [];
-        let isDataLoaded = false;
+        // --- Existing Variables ---
+let rawQuestions = [], allResults = [], allReports = [], allWrongAnswers = [];
+let currentUser = {}, currentQuizSet = [], quizIdx = 0, score = 0, wrongAnswersPayload = [];
+let isDataLoaded = false;
+
+// --- Add This Line Here ---
+let isQuizActive = false;
 
         window.onload = () => {
             populateSelects();
@@ -263,55 +280,103 @@
             }
         }
 
-        function showView(viewId) {
-            document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden'));
-            document.getElementById('view-' + viewId).classList.remove('hidden');
-        }
+        // Replace your existing showView and goHome with these:
 
-        function goHome() { location.reload(); }
+function showView(viewId) {
+    // 1. Hide all main view containers
+    document.querySelectorAll('main > div').forEach(div => {
+        div.classList.add('hidden');
+    });
+    
+    // 2. Show the requested view with a smooth fade-in
+    const targetView = document.getElementById('view-' + viewId);
+    if (targetView) {
+        targetView.classList.remove('hidden');
+        targetView.classList.add('animate__animated', 'animate__fadeIn');
+    }
+}
+
+function goHome() {
+    // 1. PROTECTION: If a quiz is active, warn the user before they lose progress
+    if (typeof isQuizActive !== 'undefined' && isQuizActive) {
+        if (!confirm("Quiz is in progress. Exit and lose your current progress?")) {
+            return; // User cancelled, stay on the quiz
+        }
+    }
+
+    // 2. RESET STATE: Quiz is no longer active
+    if (typeof isQuizActive !== 'undefined') isQuizActive = false;
+
+    // 3. SPEED FIX: Instead of location.reload(), just show the home view.
+    // This keeps the data loaded in memory so "Connecting to Server" doesn't happen again.
+    showView('home');
+}
 
         // --- QUIZ LOGIC ---
         function startQuiz() {
-            if(!isDataLoaded) return alert("Still loading data, please wait 2 seconds...");
-            const name = document.getElementById('staff-name').value.trim();
-            const topic = document.getElementById('staff-topic-select').value;
-            if(!name) return alert("Enter name");
-            currentUser = { name: name.toUpperCase(), outlet: document.getElementById('staff-outlet').value, lang: document.getElementById('staff-lang').value, topic };
-            currentQuizSet = rawQuestions.filter(q => q.topic === topic);
-            quizIdx = 0; score = 0; wrongAnswersPayload = [];
-            showView('quiz');
-            document.getElementById('quiz-topic-display').innerText = topic;
-            renderQuestion();
-        }
+    // 1. SPEED FIX: If data isn't loaded yet, try to fetch again but don't block
+    if(!isDataLoaded) {
+        showLoader(true, "Finalizing sync...");
+        fetchData().then(() => {
+            showLoader(false);
+            startQuiz(); // Re-run once loaded
+        });
+        return;
+    }
 
-        function renderQuestion() {
-            document.getElementById('next-btn-container').classList.add('hidden');
-            const q = currentQuizSet[quizIdx];
-            document.getElementById('quiz-progress').innerText = `Question ${quizIdx+1}/${currentQuizSet.length}`;
-            document.getElementById('q-text').innerText = currentUser.lang === 'en' ? q.question_en : q.question_ms;
-            const opts = document.getElementById('q-options');
-            opts.innerHTML = '';
-            const optArr = currentUser.lang === 'en' ? [q.opt1_en, q.opt2_en, q.opt3_en, q.opt4_en] : [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
-            optArr.forEach((o, i) => {
-                if(o) {
-                    const btn = document.createElement('button');
-                    btn.className = "p-4 border-2 border-gray-100 rounded-xl bg-white text-left transition-all";
-                    btn.innerText = o;
-                    btn.onclick = () => {
-                        const isCorrect = i == q.correct;
-                        if(!isCorrect) wrongAnswersPayload.push({ qId: q.id, qText: q.question_en, userWrongChoice: o, correctAnswerText: optArr[q.correct] });
-                        else score++;
-                        document.querySelectorAll('#q-options button').forEach((b, idx) => {
-                            b.disabled = true;
-                            if(idx == q.correct) b.classList.add('answer-correct');
-                            else if(idx == i) b.classList.add('answer-wrong');
-                        });
-                        document.getElementById('next-btn-container').classList.remove('hidden');
-                    };
-                    opts.appendChild(btn);
-                }
-            });
+    const name = document.getElementById('staff-name').value.trim();
+    const topic = document.getElementById('staff-topic-select').value;
+    if(!name) return alert("Enter name");
+
+    currentUser = { 
+        name: name.toUpperCase(), 
+        outlet: document.getElementById('staff-outlet').value, 
+        lang: document.getElementById('staff-lang').value, 
+        topic 
+    };
+
+    currentQuizSet = rawQuestions.filter(q => q.topic === topic);
+    quizIdx = 0; score = 0; wrongAnswersPayload = [];
+    
+    // 2. PROTECTION: Quiz is now active. Back button will now trigger "Confirm" prompt
+    isQuizActive = true; 
+    
+    showView('quiz');
+    document.getElementById('quiz-topic-display').innerText = topic;
+    renderQuestion();
+}
+
+        // Inside renderQuestion() -> option.onclick:
+const container = document.getElementById('next-btn-container');
+const nextBtn = document.getElementById('next-btn-text');
+
+container.classList.remove('hidden', 'animate__animated', 'animate__bounceInUp');
+void container.offsetWidth; // Trigger reflow for animation restart
+container.classList.add('animate__animated', 'animate__bounceInUp');
+
+if (quizIdx === currentQuizSet.length - 1) {
+    nextBtn.innerText = "Finish Quiz & Submit";
+    document.querySelector('#next-btn-container button').classList.replace('bg-indigo-600', 'bg-green-600');
+    document.querySelector('#next-btn-container button').classList.add('animate__animated', 'animate__pulse', 'animate__infinite');
+} else {
+    nextBtn.innerText = "Next Question";
+}
+
+        // 3. ANIMATION LOGIC
+        container.classList.remove('hidden');
+        container.classList.add('animate__animated', 'animate__bounceInUp');
+
+        if (quizIdx === currentQuizSet.length - 1) {
+            // Final Question Finish Animation
+            nextBtn.innerHTML = `<span>Finish Quiz & Submit</span>`;
+            nextBtn.className = "w-full py-4 bg-green-600 text-white rounded-2xl font-bold shadow-xl animate__animated animate__pulse animate__infinite";
+        } else {
+            // Standard Next Button
+            nextBtn.innerHTML = `<span>Next Question</span>`;
+            nextBtn.className = "w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-xl";
         }
+    };
+}
 
         function nextQuestion() {
             quizIdx++;
@@ -320,15 +385,17 @@
         }
 
         async function finishQuiz() {
-            showLoader(true, "Saving Result...");
-            const perc = Math.round((score / currentQuizSet.length) * 100) + '%';
-            const payload = { action: 'save_result', staffName: currentUser.name, outlet: currentUser.outlet, score: `${score}/${currentQuizSet.length}`, perc, topic: currentUser.topic, wrongAnswers: wrongAnswersPayload };
-            await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            showLoader(false);
-            showView('success');
-            document.getElementById('final-score-text').innerText = payload.score;
-            document.getElementById('final-perc-text').innerText = `(${perc})`;
-        }
+    isQuizActive = false; // RELEASE PROTECTION
+    
+    showLoader(true, "Saving Result...");
+    const perc = Math.round((score / currentQuizSet.length) * 100) + '%';
+    // ... rest of your existing save logic ...
+    
+    document.getElementById('final-score-text').innerText = `${score}/${currentQuizSet.length}`;
+    document.getElementById('final-perc-text').innerText = `(${perc})`;
+    showView('success');
+    showLoader(false);
+}
 
         // --- MANAGER LOGIC ---
         function updateMgrOutlets() {
@@ -608,4 +675,5 @@
     </script>
 </body>
 </html>
+
 
