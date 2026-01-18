@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RetailTraining Pro | Supervisor Dashboard</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
@@ -201,8 +205,9 @@
     </main>
 
     <script>
-        // --- CONFIG & STATE ---
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec";
+        // REPLACE THIS WITH YOUR DEPLOYED WEB APP URL
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec"; 
+        
         const outlets = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
         const managerMapping = {
             "R1 - AMIRUL": ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"],
@@ -240,19 +245,32 @@
             document.getElementById('nav-status').innerText = "Connecting...";
             try {
                 const res = await fetch(APPS_SCRIPT_URL);
+                if (!res.ok) throw new Error("Network Response Error");
                 const data = await res.json();
+                
                 rawQuestions = data.questions || [];
                 allResults = data.results || [];
                 allReports = data.reports || [];
                 allWrongAnswers = data.wrongAnswers || [];
+
                 const uniqueTopics = [...new Set(rawQuestions.map(q => q.topic))];
                 const ts = document.getElementById('staff-topic-select');
                 ts.innerHTML = '';
-                uniqueTopics.forEach(t => ts.add(new Option(t, t)));
+                if(uniqueTopics.length === 0) {
+                   ts.add(new Option("No active topics found", ""));
+                } else {
+                   uniqueTopics.forEach(t => ts.add(new Option(t, t)));
+                }
+
                 document.getElementById('nav-status').innerText = "System Ready";
                 document.getElementById('nav-status').className = "text-xs text-green-500 font-mono bg-green-50 px-2 py-1 rounded";
                 isDataLoaded = true;
-            } catch (e) { document.getElementById('nav-status').innerText = "Offline Mode"; }
+                return true;
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('nav-status').innerText = "Sync Failed";
+                return false;
+            }
         }
 
         function showView(viewId) {
@@ -270,18 +288,25 @@
             showView('roles');
         }
 
-        // --- QUIZ CORE ---
         function startQuiz() {
             if(!isDataLoaded) {
-                showLoader(true, "Syncing...");
-                fetchData().then(() => { showLoader(false); startQuiz(); });
+                showLoader(true, "Refreshing Questions...");
+                fetchData().then(success => {
+                    showLoader(false);
+                    if(success) startQuiz();
+                    else alert("Could not load questions. Check your Google Sheet 'Questions' tab status column.");
+                });
                 return;
             }
             const name = document.getElementById('staff-name').value.trim();
             const topic = document.getElementById('staff-topic-select').value;
-            if(!name) return alert("Enter name");
+            if(!name || !topic) return alert("Please enter name and select a valid topic");
+            
             currentUser = { name: name.toUpperCase(), outlet: document.getElementById('staff-outlet').value, lang: document.getElementById('staff-lang').value, topic };
             currentQuizSet = rawQuestions.filter(q => q.topic === topic);
+            
+            if(currentQuizSet.length === 0) return alert("No questions found for this topic.");
+
             quizIdx = 0; score = 0; wrongAnswersPayload = []; isQuizActive = true;
             showView('quiz');
             document.getElementById('quiz-topic-display').innerText = topic;
@@ -312,29 +337,28 @@
         function handleAnswer(btn, choice, q) {
             const allBtns = document.querySelectorAll('#q-options button');
             allBtns.forEach(b => b.disabled = true);
-            const isCorrect = choice === q.correct_option;
+            const isCorrect = choice.toUpperCase() === q.correct_option.toUpperCase();
+            
             if(isCorrect) {
                 btn.classList.add('answer-correct');
                 score++;
             } else {
                 btn.classList.add('answer-wrong');
-                // Capture data for WrongAnswers sheet as defined in GAS
                 wrongAnswersPayload.push({
                     qId: q.id || "N/A",
                     qText: q.question,
                     userWrongChoice: btn.innerText,
-                    correctAnswerText: document.querySelector(`#q-options button:nth-child(${['A','B','C','D'].indexOf(q.correct_option)+1})`)?.innerText || q.correct_option
+                    correctAnswerText: q[`option_${q.correct_option.toLowerCase()}`] || q.correct_option
                 });
                 // Highlight correct one
-                allBtns[['A','B','C','D'].indexOf(q.correct_option)].classList.add('answer-correct');
+                const correctIdx = opts.indexOf(q.correct_option.toUpperCase());
+                if(allBtns[correctIdx]) allBtns[correctIdx].classList.add('answer-correct');
             }
             
-            const nextCont = document.getElementById('next-btn-container');
+            document.getElementById('next-btn-container').classList.remove('hidden');
             const nextTxt = document.getElementById('next-btn-text');
-            nextCont.classList.remove('hidden');
             if(quizIdx === currentQuizSet.length - 1) {
                 nextTxt.innerText = "Finish & Submit";
-                document.querySelector('#next-btn-container button').className = "w-full py-4 bg-green-600 text-white rounded-xl font-bold animate__animated animate__pulse animate__infinite";
             } else {
                 nextTxt.innerText = "Next Question";
             }
@@ -358,19 +382,23 @@
                 score: `${score}/${currentQuizSet.length}`,
                 perc: perc,
                 topic: currentUser.topic,
-                wrongAnswers: wrongAnswersPayload // Matches GAS if(data.wrongAnswers)
+                wrongAnswers: wrongAnswersPayload
             };
 
             try {
-                await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
+                await fetch(APPS_SCRIPT_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify(payload),
+                    mode: 'no-cors' 
+                });
                 document.getElementById('final-score-text').innerText = `${score}/${currentQuizSet.length}`;
                 document.getElementById('final-perc-text').innerText = `(${perc})`;
                 showView('success');
-            } catch (e) { alert("Error saving results. Check connection."); }
+            } catch (e) { alert("Error saving results. Data may not have synced."); }
             showLoader(false);
         }
 
-        // --- MANAGER LOGIC ---
+        // --- MANAGER LOGIC (Reference Features Maintained) ---
         function updateMgrOutlets() {
             const m = document.getElementById('mgr-select').value;
             const oSel = document.getElementById('mgr-outlet');
@@ -414,8 +442,6 @@
         async function submitReport() {
             const staffName = document.getElementById('rep-staff').value;
             if(!staffName) return alert("Select staff");
-            
-            // Payload keys must match GAS doPost data extraction
             const payload = {
                 action: 'save_report',
                 manager: document.getElementById('mgr-select').value,
@@ -429,7 +455,6 @@
                 performanceGaps: document.getElementById('rep-gaps').value,
                 recommendations: document.getElementById('rep-rec').value
             };
-            
             showLoader(true, "Saving Report...");
             try {
                 await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
@@ -439,7 +464,6 @@
             showLoader(false);
         }
 
-        // --- SUPERVISOR DASH ---
         async function loginSupervisor() {
             if(document.getElementById('sup-pass').value !== "admin") return alert("Denied");
             showLoader(true, "Building Dashboard...");
@@ -456,12 +480,10 @@
             const reportBody = document.getElementById('dash-table-body');
             const gapBody = document.getElementById('gap-analysis-body');
             reportBody.innerHTML = ''; gapBody.innerHTML = '';
-
             const filteredReports = filter === "ALL" ? allReports : allReports.filter(r => (r.Outlet || "").toString().toUpperCase() === filter.toUpperCase());
             filteredReports.forEach(rep => {
                 reportBody.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-2">${formatAppDate(rep["Timestamp (Standard)"])}</td><td class="p-2 font-bold">${rep["Staff Name"]}</td><td class="p-2">${rep["Outlet"]}</td><td class="p-2">${rep["Quiz Score"]}</td><td class="p-2"><div class="grid grid-cols-2 gap-1 text-[8px] uppercase font-bold text-gray-400"><span>Gaps: ${rep["Performance Gaps"] || '-'}</span><span>Recs: ${rep["Recommendations"] || '-'}</span></div></td></tr>`;
             });
-
             const counts = {};
             const filtWrongs = filter === "ALL" ? allWrongAnswers : allWrongAnswers.filter(w => (w.Outlet || "").toString().toUpperCase() === filter.toUpperCase());
             filtWrongs.forEach(w => {
