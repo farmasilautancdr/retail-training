@@ -480,27 +480,30 @@
         }
 
         function renderDashTable() {
-            const body = document.getElementById('dash-table-body');
-            body.innerHTML = '';
-            
-            allResults.forEach(r => {
-                const sName = (r.Name || r.name || "").toString().trim().toUpperCase();
-                const report = allReports.find(rep => {
-                    const repName = (rep["Staff Name"] || rep.staffName || "").toString().trim().toUpperCase();
-                    return repName === sName;
-                }) || {};
-                
-                body.innerHTML += `
-                    <tr class="border-b hover:bg-white">
-                        <td class="p-3 font-bold text-gray-800">${sName}</td>
-                        <td class="p-3 text-gray-500">${r.Outlet || r.outlet}</td>
-                        <td class="p-3 text-indigo-600 font-bold">${r.Percentage || r.perc}</td>
-                        <td class="p-3 font-bold text-orange-600">${report.Level || report.level || 'Pending'}</td>
-                        <td class="p-3 text-gray-600 truncate max-w-[150px]">${report.Gaps || report.gaps || '-'}</td>
-                        <td class="p-3 text-gray-400 italic">${report.Manager || report.manager || '-'}</td>
-                    </tr>`;
-            });
-        }
+    const body = document.getElementById('dash-table-body');
+    body.innerHTML = '';
+    
+    allResults.forEach(r => {
+        // Standardize the staff name from the Quiz Results
+        const sName = (r.Name || r.name || "").toString().trim().toUpperCase();
+        
+        // Find the matching report by checking common naming variations
+        const report = allReports.find(rep => {
+            const repName = (rep["Staff Name"] || rep.staffName || rep["Staff_Name"] || "").toString().trim().toUpperCase();
+            return repName === sName;
+        }) || {};
+        
+        body.innerHTML += `
+            <tr class="border-b hover:bg-white">
+                <td class="p-3 font-bold text-gray-800">${sName}</td>
+                <td class="p-3 text-gray-500">${r.Outlet || r.outlet}</td>
+                <td class="p-3 text-indigo-600 font-bold">${r.Percentage || r.perc}</td>
+                <td class="p-3 font-bold text-orange-600">${report.Level || report.level || 'Pending'}</td>
+                <td class="p-3 text-gray-600 truncate max-w-[150px]">${report.Gaps || report.gaps || '-'}</td>
+                <td class="p-3 text-gray-400 italic">${report.Manager || report.manager || '-'}</td>
+            </tr>`;
+    });
+}
 
         function downloadCSV() {
             let csv = "Date,Staff Name,Outlet,Topic,Quiz Score,Manager,Skill Level,Gaps\n";
@@ -519,3 +522,4 @@
     </script>
 </body>
 </html>
+
