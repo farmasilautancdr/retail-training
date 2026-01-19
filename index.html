@@ -2,181 +2,280 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RT Pro | RetailTraining</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetailTraining Pro</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: #f3f4f6; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .btn-grad { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); transition: 0.3s; }
-        .hidden { display: none !important; }
-        .back-btn { @apply text-gray-400 text-sm flex items-center gap-1 hover:text-indigo-600 mb-4 transition-colors cursor-pointer; }
+        .role-card:hover { transform: translateY(-5px); transition: all 0.3s ease; }
+        .btn-grad { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: 0.3s; }
+        .btn-grad:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-back { @apply mt-4 text-sm text-gray-500 hover:text-indigo-600 flex items-center justify-center gap-1 transition cursor-pointer; }
+        .no-select { user-select: none; }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="min-h-screen pb-10">
+<body class="min-h-screen pb-10 no-select">
 
-    <nav class="bg-white shadow-sm p-4 sticky top-0 z-40 border-b">
+    <nav class="bg-white shadow-sm p-4 mb-6">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="font-bold text-lg text-indigo-700">RetailTraining Pro</h1>
-            <div id="nav-status" class="text-[10px] text-gray-400 font-mono">Syncing...</div>
+            <h1 class="font-bold text-xl text-indigo-700">Retail Training Pro</h1>
+            <div id="nav-status" class="text-xs text-gray-400 font-mono">Connecting...</div>
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto px-4 mt-6">
+    <main class="max-w-4xl mx-auto px-4">
         
-        <div id="view-roles" class="space-y-4">
-            <div onclick="showView('staff-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer active:scale-95 transition-transform">
-                <span class="text-3xl">👤</span>
-                <div><h2 class="font-bold text-gray-800">Staff Member</h2><p class="text-xs text-gray-500">Take Quiz</p></div>
+        <div id="view-roles" class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+            <div onclick="showView('staff-login')" class="role-card glass p-8 rounded-2xl shadow-xl cursor-pointer text-center border-2 border-transparent hover:border-indigo-500">
+                <div class="text-5xl mb-4">👤</div>
+                <h2 class="text-xl font-bold">Staff Member</h2>
+                <p class="text-gray-500 text-sm mt-2">Take training quizzes</p>
             </div>
-            <div onclick="showView('manager-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer active:scale-95 transition-transform">
-                <span class="text-3xl">👔</span>
-                <div><h2 class="font-bold text-gray-800">Manager Access</h2><p class="text-xs text-gray-500">Staff Assessment</p></div>
+            <div onclick="showView('manager-login')" class="role-card glass p-8 rounded-2xl shadow-xl cursor-pointer text-center border-2 border-transparent hover:border-indigo-500">
+                <div class="text-5xl mb-4">👔</div>
+                <h2 class="text-xl font-bold">Area Manager</h2>
+                <p class="text-gray-500 text-sm mt-2">Submit assessment reports</p>
             </div>
-            <div onclick="showView('supervisor-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer active:scale-95 transition-transform">
-                <span class="text-3xl">⭐</span>
-                <div><h2 class="font-bold text-gray-800">Supervisor</h2><p class="text-xs text-gray-500">Admin Dashboard</p></div>
-            </div>
-        </div>
-
-        <div id="view-staff-login" class="hidden glass p-6 rounded-2xl space-y-4 shadow-xl">
-            <div onclick="goHome()" class="back-btn">← Back to Roles</div>
-            <input type="text" id="staff-name" class="w-full p-3 border rounded-lg" placeholder="Enter Full Name">
-            <select id="staff-outlet" class="w-full p-3 border rounded-lg"></select>
-            <select id="staff-topic-select" class="w-full p-3 border rounded-lg font-bold text-indigo-600">
-                <option value="">Select Topic</option>
-            </select>
-            <button onclick="startQuiz()" class="w-full btn-grad text-white p-4 rounded-xl font-bold">Start Now</button>
-        </div>
-
-        <div id="view-quiz" class="hidden glass p-6 rounded-2xl shadow-xl space-y-4">
-            <div id="quiz-back-btn" class="back-btn" onclick="confirmExitQuiz()">← Back to Dashboard</div>
-            <div class="flex justify-between text-xs font-bold text-indigo-500 uppercase">
-                <span id="quiz-progress">Q1</span>
-                <span id="quiz-topic-display">Topic</span>
-            </div>
-            <h3 id="q-text" class="text-lg font-bold text-gray-800 py-4"></h3>
-            <div id="q-options" class="grid grid-cols-1 gap-3"></div>
-            <div id="next-btn-container" class="hidden pt-4">
-                <button onclick="nextQuestion()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold shadow-lg">Next Question</button>
+            <div onclick="showView('supervisor-login')" class="role-card glass p-8 rounded-2xl shadow-xl cursor-pointer text-center border-2 border-transparent hover:border-indigo-500">
+                <div class="text-5xl mb-4">⭐</div>
+                <h2 class="text-xl font-bold">Supervisor</h2>
+                <p class="text-gray-500 text-sm mt-2">Full data dashboard</p>
             </div>
         </div>
 
-        <div id="view-manager-login" class="hidden glass p-6 rounded-2xl space-y-4">
-            <div onclick="goHome()" class="back-btn">← Back to Roles</div>
-            <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-3 border rounded-lg"></select>
-            <select id="mgr-outlet" class="w-full p-3 border rounded-lg"></select>
-            <input type="password" id="mgr-pass" class="w-full p-3 border rounded-lg" placeholder="PIN">
-            <button onclick="loginManager()" class="w-full btn-grad text-white p-4 rounded-xl font-bold">Login</button>
+        <div id="view-staff-login" class="hidden glass p-8 rounded-2xl shadow-xl max-w-md mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center">Staff Entry</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Preferred Language</label>
+                    <select id="staff-lang" class="w-full p-3 border rounded-lg">
+                        <option value="en">English</option>
+                        <option value="ms">Bahasa Melayu</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Full Name</label>
+                    <input type="text" id="staff-name" class="w-full p-3 border rounded-lg" placeholder="Enter name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Outlet</label>
+                    <select id="staff-outlet" class="w-full p-3 border rounded-lg"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Active Training Topic</label>
+                    <select id="staff-topic-select" class="w-full p-3 border-2 border-indigo-100 rounded-lg font-bold text-indigo-700">
+                        <option value="">Loading active topics...</option>
+                    </select>
+                </div>
+                <button id="btn-start-quiz" onclick="startQuiz()" class="w-full btn-grad text-white p-4 rounded-xl font-bold mt-4 shadow-lg">Mula Kuiz / Start Quiz</button>
+                <div onclick="goHome()" class="btn-back">← Back to Login</div>
+            </div>
         </div>
 
-        <div id="view-manager-form" class="hidden space-y-4">
-            <div onclick="goHome()" class="back-btn">← Back to Roles</div>
-            <div class="glass p-6 rounded-2xl shadow-lg space-y-4">
-                <h2 class="font-bold text-indigo-700">Submit Assessment</h2>
-                <div class="grid grid-cols-2 gap-2">
+        <div id="view-quiz" class="hidden glass p-8 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-center mb-6">
+                <span id="quiz-progress" class="text-indigo-600 font-bold text-sm">Question 1</span>
+                <span id="quiz-topic-display" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase"></span>
+            </div>
+            <div id="quiz-container">
+                <h3 id="q-text" class="text-xl font-semibold mb-6"></h3>
+                <div id="q-options" class="grid grid-cols-1 gap-4"></div>
+            </div>
+            <p class="text-center text-[10px] text-gray-400 mt-8 italic">Quiz in progress. Navigation is locked.</p>
+        </div>
+
+        <div id="view-success" class="hidden glass p-8 rounded-3xl shadow-2xl max-w-md mx-auto text-center border-t-8 border-green-500">
+            <div class="text-5xl mb-4">🎉</div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-1">Quiz Completed!</h2>
+            <div class="my-6 p-4 bg-gray-50 rounded-2xl">
+                <p id="final-score-text" class="text-4xl font-black text-indigo-700 mb-1">0/0</p>
+                <p id="final-perc-text" class="text-lg font-bold text-indigo-500">(0%)</p>
+            </div>
+            <p id="final-feedback" class="text-md font-medium text-gray-700 mb-6">Excellent!</p>
+            <div id="review-section" class="hidden text-left mt-6 border-t pt-4 max-h-60 overflow-y-auto mb-6">
+                <h4 class="font-bold text-sm uppercase text-gray-400 mb-3 text-center">Review Answers</h4>
+                <div id="review-list" class="space-y-3"></div>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button id="btn-toggle-review" onclick="toggleReview()" class="w-full bg-white border-2 border-indigo-500 text-indigo-600 p-3 rounded-xl font-bold hover:bg-indigo-50 transition">Review Answers</button>
+                <button onclick="goHome()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">Back to Home</button>
+            </div>
+        </div>
+
+        <div id="view-manager-login" class="hidden glass p-8 rounded-2xl shadow-xl max-w-md mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center">Manager Login</h2>
+            <div class="space-y-4">
+                <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-3 border rounded-lg">
+                    <option value="">Select Manager</option>
+                </select>
+                <select id="mgr-outlet" class="w-full p-3 border rounded-lg">
+                    <option value="">Select Outlet</option>
+                </select>
+                <input type="password" id="mgr-pass" class="w-full p-3 border rounded-lg" placeholder="Manager Password">
+                <button onclick="loginManager()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">Access Report Form</button>
+                <div onclick="goHome()" class="btn-back">← Back to Login</div>
+            </div>
+        </div>
+
+        <div id="view-manager-form" class="hidden glass p-8 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-start mb-4">
+                <h2 class="text-2xl font-bold text-indigo-700">Assessment Report</h2>
+                <button onclick="goHome()" class="text-xs text-indigo-600 font-bold border border-indigo-200 px-3 py-1 rounded-lg">Logout</button>
+            </div>
+            <p id="mgr-info-display" class="text-sm text-gray-500 mb-6"></p>
+            <div class="bg-indigo-50 p-4 rounded-xl mb-6 flex justify-between items-center">
+                <div>
+                    <p class="text-xs uppercase font-bold text-indigo-400">Quiz Completed</p>
+                    <p id="stat-completed" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs uppercase font-bold text-indigo-400">Report Date</p>
+                    <input type="date" id="report-date" class="bg-transparent font-bold outline-none">
+                </div>
+            </div>
+            <form id="report-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[10px] font-bold text-gray-400">TRAINING DATE</label>
-                        <input type="date" id="rep-date-cal" class="w-full p-2 border rounded bg-gray-50 text-sm">
+                        <label class="block text-sm font-bold mb-1">Select Staff Member</label>
+                        <select id="rep-staff" class="w-full p-2 border rounded" onchange="updateStaffScoreDisplay()"></select>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-gray-400">TOPIC</label>
-                        <select id="rep-topic" class="w-full p-2 border rounded bg-gray-50 text-sm" onchange="filterManagerStaff()"></select>
+                        <label class="block text-sm font-bold mb-1">Staff Quiz Result</label>
+                        <div id="rep-score-display" class="p-2 bg-gray-100 rounded font-mono border text-center font-bold text-indigo-700">-</div>
                     </div>
                 </div>
-                <select id="rep-staff" class="w-full p-3 border rounded-lg font-bold" onchange="updateStaffScoreDisplay()">
-                    <option value="">-- Select Staff --</option>
-                </select>
-                <select id="rep-level" class="w-full p-3 border rounded-lg">
-                    <option value="Low">Low (0-70%)</option>
-                    <option value="Medium">Medium (71-84%)</option>
-                    <option value="High">High (85-100%)</option>
-                </select>
-                <textarea id="rep-comments" class="w-full p-3 border rounded-lg h-24 text-sm" placeholder="Competency Comments..."></textarea>
-                <button onclick="submitReport()" class="w-full btn-grad text-white p-4 rounded-xl font-bold">Submit Report</button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Training Title</label>
+                        <select id="rep-title" class="w-full p-2 border rounded font-bold" onchange="updateStaffScoreDisplay()">
+                            <option value="">-- Select Topic --</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-sm font-bold mb-1">Training Date</label><input type="date" id="rep-train-date" class="w-full p-2 border rounded"></div>
+                </div>
+                <div class="border-t pt-4">
+                    <label class="block text-sm font-bold mb-1">Staff Competency Level (Auto-calculated)</label>
+                    <select id="rep-level" class="w-full p-3 border-2 rounded-lg font-bold bg-gray-50 pointer-events-none">
+                        <option value="">Awaiting Data...</option>
+                        <option value="Low">Low (0-70%)</option>
+                        <option value="Medium">Medium (71-84%)</option>
+                        <option value="High">High (85-100%)</option>
+                    </select>
+                </div>
+                <div class="space-y-3">
+                    <textarea id="rep-comments" placeholder="Competency Comments" class="w-full p-2 border rounded h-20 text-sm"></textarea>
+                    <textarea id="rep-focus" placeholder="Housebrand Focus Points" class="w-full p-2 border rounded h-20 text-sm"></textarea>
+                    <textarea id="rep-gaps" placeholder="Performance Gaps" class="w-full p-2 border rounded h-20 text-sm"></textarea>
+                    <textarea id="rep-rec" placeholder="Recommendations" class="w-full p-2 border rounded h-20 text-sm"></textarea>
+                </div>
+                <button type="button" id="btn-submit-report" onclick="submitReport()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">Submit Report</button>
+            </form>
+        </div>
+
+        <div id="view-supervisor-login" class="hidden glass p-8 rounded-2xl shadow-xl max-w-md mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center">Supervisor Access</h2>
+            <div class="space-y-4">
+                <input type="password" id="sup-pass" class="w-full p-3 border rounded-lg" placeholder="Enter Supervisor Password">
+                <button onclick="loginSupervisor()" class="w-full btn-grad text-white p-4 rounded-xl font-bold shadow-lg">Access Dashboard</button>
+                <div onclick="goHome()" class="btn-back">← Back to Login</div>
             </div>
         </div>
 
-        <div id="view-supervisor-login" class="hidden glass p-6 rounded-2xl space-y-4">
-            <div onclick="goHome()" class="back-btn">← Back to Roles</div>
-            <input type="password" id="sup-pass" class="w-full p-3 border rounded-lg" placeholder="Admin PIN">
-            <button onclick="loginSupervisor()" class="w-full btn-grad text-white p-4 rounded-xl font-bold">Dashboard</button>
-        </div>
-
-        <div id="view-supervisor-dash" class="hidden space-y-6 animate__animated animate__fadeIn">
-            <div onclick="goHome()" class="back-btn">← Back to Roles</div>
+        <div id="view-supervisor-dash" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold">Data Insights</h2>
+                <button onclick="goHome()" class="text-xs bg-white border border-gray-300 px-4 py-2 rounded-lg font-bold">Logout</button>
+            </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass p-4 rounded-xl border-l-4 border-indigo-500">
-                    <p class="text-xs font-bold text-gray-500">QUIZZES</p>
-                    <p id="stat-total-quizzes" class="text-2xl font-black">0</p>
+                <div class="glass p-4 rounded-xl text-center shadow-sm">
+                    <p class="text-xs text-gray-400 uppercase">Total Staff</p>
+                    <p id="dash-staff" class="text-2xl font-bold text-indigo-600">0</p>
                 </div>
-                <div class="glass p-4 rounded-xl border-l-4 border-green-500">
-                    <p class="text-xs font-bold text-gray-500">AVG SCORE</p>
-                    <p id="stat-avg-score" class="text-2xl font-black">0%</p>
+                <div class="glass p-4 rounded-xl text-center shadow-sm">
+                    <p class="text-xs text-gray-400 uppercase">Avg Score</p>
+                    <p id="dash-avg" class="text-2xl font-bold text-orange-600">0%</p>
                 </div>
-                <div class="glass p-4 rounded-xl border-l-4 border-orange-500">
-                    <p class="text-xs font-bold text-gray-500">OUTLETS</p>
-                    <p id="stat-outlets" class="text-2xl font-black">0</p>
+                <div class="glass p-4 rounded-xl text-center shadow-sm">
+                    <p class="text-xs text-gray-400 uppercase">Outlets</p>
+                    <p id="dash-outlets" class="text-2xl font-bold text-purple-600">0</p>
                 </div>
-                <div class="glass p-4 rounded-xl border-l-4 border-red-500">
-                    <p class="text-xs font-bold text-gray-500">REPORTS</p>
-                    <p id="stat-reports" class="text-2xl font-black">0</p>
+                <div class="glass p-4 rounded-xl text-center shadow-sm">
+                    <p class="text-xs text-gray-400 uppercase">Reports</p>
+                    <p id="dash-reps" class="text-2xl font-bold text-green-600">0</p>
                 </div>
             </div>
 
-            <div class="glass p-4 rounded-2xl shadow-sm border overflow-hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-sm font-bold text-gray-700">Assessment Logs</h3>
-                    <select id="sup-filter-outlet" onchange="renderDashTable()" class="text-xs p-1 border rounded"></select>
+            <div class="glass p-6 rounded-2xl shadow-lg">
+                <div class="flex flex-wrap gap-4 mb-6 items-center">
+                    <input type="text" id="filter-name" placeholder="Search staff..." class="p-2 border rounded flex-grow" onkeyup="renderDashTable()">
+                    <button onclick="exportToCSV()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold">Export Logs</button>
+                    <button onclick="exportSupervisorIntegratedReport()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold">Export Assessment + Wrongs</button>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-[11px]">
-                        <thead class="bg-gray-50 border-b">
-                            <tr><th class="p-2">Date</th><th class="p-2">Staff</th><th class="p-2">Outlet</th><th class="p-2">Score</th><th class="p-2">Topic</th></tr>
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 uppercase text-xs font-bold text-gray-500">
+                            <tr class="border-b"><th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3">Score</th><th class="p-3">Topic</th></tr>
                         </thead>
                         <tbody id="dash-table-body"></tbody>
                     </table>
                 </div>
             </div>
+
+            <div class="glass p-6 rounded-2xl shadow-lg mt-6">
+                <h3 class="font-bold text-indigo-700 mb-4">Training Gaps (Frequent Wrong Answers)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-red-50 text-red-700 font-bold">
+                            <tr class="border-b"><th class="p-2">Staff</th><th class="p-2">Question</th><th class="p-2">Their Wrong Choice</th><th class="p-2">Correct Answer</th></tr>
+                        </thead>
+                        <tbody id="dash-wrong-body"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
+        <footer class="mt-12 mb-6 text-center">
+            <div class="flex flex-col items-center justify-center gap-1">
+                <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">RetailTraining Pro</span>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 bg-gray-200 text-gray-600 text-[9px] font-bold rounded-md">v2.2.0-PRO</span>
+                    <span class="text-[9px] text-gray-400">Last Update: Jan 2026</span>
+                </div>
+            </div>
+        </footer>
     </main>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec"; // REPLACE THIS
-        let rawQuestions = [], allResults = [], allReports = [], allWrongAnswers = [];
-        let currentUser = {}, currentQuizSet = [], quizIdx = 0, score = 0, wrongAnswersPayload = [];
-
-        const outlets = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec"; 
         const managerMapping = {
             "R1 - AMIRUL": ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"],
             "R2 - HAZWANI": ["AJ", "BJR", "BP", "HQCT", "KB", "PK", "WM"],
-            "R3 - HARIS": ["B6", "BB", "CDR", "HL", "HQ", "KL"],
+            "R3 - HARIS": ["B6", "BB", "CDR", "HL", "BG", "KL"],
             "R4 - RAIHAN": ["GB", "GBD", "JTH", "RJ", "ST", "TPOH"],
             "R5 - ADNIN": ["JL", "JLD", "PP", "PSPD", "SMR"],
             "R6 - NADHIRAH": ["KS", "MC", "MLR", "TM", "TMD", "TMT"],
             "R7 - HASANUL": ["KBKK", "KBKS", "KBTC", "KBTJ", "PC", "PT"],
             "R8 - HAFSHAM": ["GM", "PM", "SLS", "TPT", "KKR", "PPK", "CK", "RP"]
         };
+        const outlets = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
 
-        window.onload = () => { populateInitialData(); fetchData(); };
+        let rawQuestions = [], allResults = [], allReports = [], allWrongAnswers = [], currentQuizSet = [], currentUser = {}, userChoices = [], quizIdx = 0, score = 0, isProcessing = false;
 
-        function populateInitialData() {
-            const sO = document.getElementById('staff-outlet');
-            const supO = document.getElementById('sup-filter-outlet');
-            const mS = document.getElementById('mgr-select');
-            
-            sO.innerHTML = '<option value="">Select Outlet</option>';
-            outlets.forEach(o => sO.add(new Option(o, o)));
-            
-            supO.innerHTML = '<option value="ALL">All Outlets</option>';
-            outlets.forEach(o => supO.add(new Option(o, o)));
-            
-            mS.innerHTML = '<option value="">Select Manager</option>';
-            Object.keys(managerMapping).forEach(m => mS.add(new Option(m, m)));
+        window.onload = async () => {
+            document.getElementById('report-date').valueAsDate = new Date();
+            populateSelects();
+            await fetchData();
+        };
+
+        function populateSelects() {
+            const sOutlet = document.getElementById('staff-outlet');
+            outlets.forEach(o => sOutlet.add(new Option(o, o)));
+            const mSelect = document.getElementById('mgr-select');
+            Object.keys(managerMapping).forEach(m => mSelect.add(new Option(m, m)));
         }
 
         async function fetchData() {
@@ -188,146 +287,131 @@
                 allReports = data.reports || [];
                 allWrongAnswers = data.wrongAnswers || [];
                 
-                // FIXED: Populate topics
-                const topics = [...new Set(rawQuestions.map(q => q.topic))];
-                const ts = document.getElementById('staff-topic-select');
-                ts.innerHTML = '<option value="">Select Topic</option>';
-                topics.forEach(t => ts.add(new Option(t, t)));
+                const uniqueTopics = [...new Set(rawQuestions.map(q => q.topic))];
+                const staffTopic = document.getElementById('staff-topic-select');
+                const managerTopic = document.getElementById('rep-title');
+                
+                staffTopic.innerHTML = '';
+                managerTopic.innerHTML = '<option value="">-- Select Topic --</option>';
+                
+                uniqueTopics.forEach(t => {
+                    staffTopic.add(new Option(t, t));
+                    managerTopic.add(new Option(t, t));
+                });
 
                 document.getElementById('nav-status').innerText = "System Ready";
-            } catch (e) { document.getElementById('nav-status').innerText = "Offline"; }
+            } catch (e) { document.getElementById('nav-status').innerText = "Offline Mode"; }
         }
 
-        function showView(v) {
+        function showView(viewId) {
             document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden'));
-            document.getElementById('view-' + v).classList.remove('hidden');
-            window.scrollTo(0,0);
+            document.getElementById('view-' + viewId).classList.remove('hidden');
         }
 
-        function goHome() { showView('roles'); }
+        function goHome() { location.reload(); }
 
-        // --- STAFF QUIZ LOGIC ---
         function startQuiz() {
-            const name = document.getElementById('staff-name').value.trim();
-            const outlet = document.getElementById('staff-outlet').value;
-            const topic = document.getElementById('staff-topic-select').value;
-            if(!name || !outlet || !topic) return alert("Complete all fields");
-            
-            currentUser = { name, outlet, topic };
-            currentQuizSet = rawQuestions.filter(q => q.topic === topic);
-            if(currentQuizSet.length === 0) return alert("No questions found for this topic");
-            
-            quizIdx = 0; score = 0; wrongAnswersPayload = [];
+            const nameInput = document.getElementById('staff-name').value.trim();
+            const selectedTopic = document.getElementById('staff-topic-select').value;
+            if(!nameInput) return alert("Enter name");
+            currentUser = { name: nameInput, outlet: document.getElementById('staff-outlet').value, lang: document.getElementById('staff-lang').value, topic: selectedTopic };
+            currentQuizSet = rawQuestions.filter(q => q.topic === selectedTopic);
+            quizIdx = 0; score = 0; userChoices = [];
             showView('quiz');
-            document.getElementById('quiz-back-btn').classList.remove('hidden');
             renderQuestion();
         }
 
         function renderQuestion() {
-            // FIX: Only allow back button on Question 1
-            if(quizIdx > 0) document.getElementById('quiz-back-btn').classList.add('hidden');
-            
             const q = currentQuizSet[quizIdx];
-            document.getElementById('quiz-progress').innerText = `Q${quizIdx + 1}/${currentQuizSet.length}`;
-            document.getElementById('quiz-topic-display').innerText = currentUser.topic;
-            document.getElementById('q-text').innerText = q.question || q.Question;
-            
-            const container = document.getElementById('q-options');
-            container.innerHTML = '';
-            document.getElementById('next-btn-container').classList.add('hidden');
-            
-            ['a','b','c','d'].forEach(opt => {
-                const optText = q[`option_${opt}`] || q[opt.toUpperCase()];
-                if(optText) {
-                    const b = document.createElement('button');
-                    b.className = "p-4 text-left border-2 border-gray-100 rounded-xl font-medium bg-white active:bg-indigo-50";
-                    b.innerText = optText;
-                    b.onclick = () => handleAnswer(b, opt.toUpperCase(), q);
-                    container.appendChild(b);
+            document.getElementById('quiz-topic-display').innerText = q.topic;
+            document.getElementById('quiz-progress').innerText = `Question ${quizIdx+1}/${currentQuizSet.length}`;
+            document.getElementById('q-text').innerText = currentUser.lang === 'en' ? q.question_en : q.question_ms;
+            const opts = document.getElementById('q-options');
+            opts.innerHTML = '';
+            const optArr = currentUser.lang === 'en' ? [q.opt1_en, q.opt2_en, q.opt3_en, q.opt4_en] : [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
+            optArr.forEach((o, i) => {
+                if (o && o.toString().trim() !== "") {
+                    const btn = document.createElement('button');
+                    btn.className = "p-4 border-2 border-gray-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 text-left transition font-medium bg-white shadow-sm";
+                    btn.innerText = o;
+                    btn.onclick = () => handleAnswer(i);
+                    opts.appendChild(btn);
                 }
             });
+            isProcessing = false;
         }
 
-        function handleAnswer(btn, choice, q) {
-            const correct = (q.correct_option || q.Correct).toUpperCase();
-            const btns = document.querySelectorAll('#q-options button');
-            btns.forEach(b => b.disabled = true);
-            
-            if(choice === correct) {
-                btn.classList.add('bg-green-100', 'border-green-500');
-                score++;
-            } else {
-                btn.classList.add('bg-red-100', 'border-red-500');
-                wrongAnswersPayload.push({
-                    qId: q.id,
-                    qText: q.question || q.Question,
-                    userWrongChoice: btn.innerText,
-                    correctAnswerText: q[`option_${correct.toLowerCase()}`] || q[correct]
-                });
-            }
-            document.getElementById('next-btn-container').classList.remove('hidden');
-        }
-
-        function nextQuestion() {
+        async function handleAnswer(idx) {
+            if(isProcessing) return;
+            isProcessing = true;
+            userChoices.push(idx);
+            if(idx == currentQuizSet[quizIdx].correct) score++;
             quizIdx++;
-            if(quizIdx < currentQuizSet.length) renderQuestion();
-            else submitQuiz();
+            setTimeout(() => { (quizIdx < currentQuizSet.length) ? renderQuestion() : finishQuiz(); }, 300);
         }
 
-        async function submitQuiz() {
-            document.getElementById('nav-status').innerText = "Saving...";
-            const payload = {
-                action: 'save_result',
-                name: currentUser.name,
-                outlet: currentUser.outlet,
-                topic: currentUser.topic,
-                score: `${score}/${currentQuizSet.length}`,
-                perc: `${Math.round((score/currentQuizSet.length)*100)}%`,
-                wrongAnswers: wrongAnswersPayload
-            };
-            await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
-            alert(`Quiz Complete! Score: ${payload.perc}`);
-            goHome();
+        async function finishQuiz() {
+            const percNum = Math.round((score / currentQuizSet.length) * 100);
+            const wrongLog = [];
+            currentQuizSet.forEach((q, i) => {
+                if(userChoices[i] != q.correct) {
+                    const opts = currentUser.lang === 'en' ? [q.opt1_en, q.opt2_en, q.opt3_en, q.opt4_en] : [q.opt1_ms, q.opt2_ms, q.opt3_ms, q.opt4_ms];
+                    wrongLog.push({ qId: q.id, qText: q.question_en, userWrongChoice: opts[userChoices[i]], correctAnswerText: opts[q.correct] });
+                }
+            });
+
+            const payload = { action: 'save_result', staffName: currentUser.name, outlet: currentUser.outlet, score: `${score}/${currentQuizSet.length}`, perc: percNum + '%', topic: currentUser.topic, wrongAnswers: wrongLog };
+            document.getElementById('quiz-container').innerHTML = `<p class="text-center font-bold">Saving...</p>`;
+            await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            
+            document.getElementById('final-score-text').innerText = `${score}/${currentQuizSet.length}`;
+            document.getElementById('final-perc-text').innerText = `(${percNum}%)`;
+            showView('success');
         }
 
-        function confirmExitQuiz() {
-            if(confirm("Exit to dashboard?")) goHome();
+        function toggleReview() {
+            document.getElementById('review-section').classList.toggle('hidden');
         }
 
-        // --- MANAGER LOGIC ---
+        // --- MANAGER LOGIC (FIXED) ---
         function updateMgrOutlets() {
             const m = document.getElementById('mgr-select').value;
-            const o = document.getElementById('mgr-outlet');
-            o.innerHTML = '<option value="">Select Outlet</option>';
-            if(m) managerMapping[m].forEach(item => o.add(new Option(item, item)));
+            const oSel = document.getElementById('mgr-outlet');
+            oSel.innerHTML = '';
+            if(m) managerMapping[m].forEach(o => oSel.add(new Option(o, o)));
         }
 
         function loginManager() {
-            if(document.getElementById('mgr-pass').value === "1234") {
-                showView('manager-form');
-                populateManagerForm();
-            } else alert("Wrong PIN");
+            if(document.getElementById('mgr-pass').value !== "1234") return alert("Invalid Password");
+            const mgr = document.getElementById('mgr-select').value;
+            const outlet = document.getElementById('mgr-outlet').value;
+            document.getElementById('mgr-info-display').innerText = `Manager: ${mgr} | Outlet: ${outlet}`;
+            const staffInOutlet = allResults.filter(r => r.Outlet === outlet);
+            document.getElementById('stat-completed').innerText = staffInOutlet.length;
+            const sSel = document.getElementById('rep-staff');
+            sSel.innerHTML = '<option value="">-- Choose Staff --</option>';
+            [...new Set(staffInOutlet.map(s => s.Name))].forEach(name => sSel.add(new Option(name, name)));
+            showView('manager-form');
         }
 
-        function populateManagerForm() {
-            const outlet = document.getElementById('mgr-outlet').value;
-            const res = allResults.filter(r => r.Outlet === outlet);
-            const topics = [...new Set(res.map(r => r.Topic))];
-            const ts = document.getElementById('rep-topic');
-            ts.innerHTML = '<option value="">All Topics</option>';
-            topics.forEach(t => ts.add(new Option(t, t)));
-            filterManagerStaff();
-        }
+        function updateStaffScoreDisplay() {
+            const name = document.getElementById('rep-staff').value;
+            const topic = document.getElementById('rep-title').value;
+            const res = allResults.find(r => r.Name === name && r.Topic === topic);
+            const display = document.getElementById('rep-score-display');
+            const levelSel = document.getElementById('rep-level');
 
-        function filterManagerStaff() {
-            const outlet = document.getElementById('mgr-outlet').value;
-            const topic = document.getElementById('rep-topic').value;
-            let filtered = allResults.filter(r => r.Outlet === outlet);
-            if(topic) filtered = filtered.filter(r => r.Topic === topic);
-            
-            const ss = document.getElementById('rep-staff');
-            ss.innerHTML = '<option value="">-- Select Staff --</option>';
-            filtered.forEach(r => ss.add(new Option(`${r.Name} (${r.Percentage})`, r.Name)));
+            if(res) {
+                const perc = parseInt(res.Percentage);
+                display.innerText = `${res.Score} (${res.Percentage})`;
+                // AUTO MATCH LEVEL
+                if(perc >= 85) levelSel.value = "High";
+                else if(perc >= 71) levelSel.value = "Medium";
+                else levelSel.value = "Low";
+            } else {
+                display.innerText = "No Result Found";
+                levelSel.value = "";
+            }
         }
 
         async function submitReport() {
@@ -336,44 +420,92 @@
                 manager: document.getElementById('mgr-select').value,
                 outlet: document.getElementById('mgr-outlet').value,
                 staffName: document.getElementById('rep-staff').value,
-                trainingDate: document.getElementById('rep-date-cal').value,
-                trainingTitle: document.getElementById('rep-topic').value,
+                quizScore: document.getElementById('rep-score-display').innerText,
+                trainingTitle: document.getElementById('rep-title').value,
+                trainingDate: document.getElementById('rep-train-date').value,
                 skillLevel: document.getElementById('rep-level').value,
-                competencyComments: document.getElementById('rep-comments').value
-                // Add other fields as needed
+                competencyComments: document.getElementById('rep-comments').value,
+                housebrandFocus: document.getElementById('rep-focus').value,
+                performanceGaps: document.getElementById('rep-gaps').value,
+                recommendations: document.getElementById('rep-rec').value
             };
-            if(!payload.staffName || !payload.trainingDate) return alert("Select staff and date");
-            await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
-            alert("Report Submitted!");
-            goHome();
+            if(!payload.staffName || !payload.trainingTitle) return alert("Select Staff and Topic");
+            await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            alert("Saved"); goHome();
         }
 
-        // --- SUPERVISOR LOGIC ---
+        // --- SUPERVISOR DASHBOARD (FIXED) ---
         function loginSupervisor() {
-            if(document.getElementById('sup-pass').value === "admin") {
-                showView('supervisor-dash');
-                renderDashTable();
-            } else alert("Wrong PIN");
+            if(document.getElementById('sup-pass').value !== "admin") return alert("Denied");
+            showView('supervisor-dash');
+            renderDashTable();
+            renderWrongAnswersTable();
         }
 
         function renderDashTable() {
-            const filter = document.getElementById('sup-filter-outlet').value;
+            const searchTerm = document.getElementById('filter-name').value.toLowerCase();
+            const filtered = allResults.filter(r => r.Name.toLowerCase().includes(searchTerm));
+            document.getElementById('dash-staff').innerText = filtered.length;
+            document.getElementById('dash-reps').innerText = allReports.length;
             const body = document.getElementById('dash-table-body');
             body.innerHTML = '';
-            
-            let filtered = allResults;
-            if(filter !== "ALL") filtered = allResults.filter(r => r.Outlet === filter);
-
-            let totalScore = 0;
             filtered.forEach(r => {
-                totalScore += parseInt(r.Percentage);
-                body.innerHTML += `<tr><td class="p-2">${r.Timestamp.split('T')[0]}</td><td class="p-2 font-bold">${r.Name}</td><td class="p-2">${r.Outlet}</td><td class="p-2">${r.Percentage}</td><td class="p-2 text-indigo-500 font-bold">${r.Topic}</td></tr>`;
+                body.innerHTML += `<tr class="border-b"><td class="p-3 text-gray-400">${r.Timestamp}</td><td class="p-3 font-bold">${r.Name}</td><td class="p-3">${r.Outlet}</td><td class="p-3 text-indigo-600 font-bold">${r.Percentage}</td><td class="p-3 text-xs">${r.Topic}</td></tr>`;
+            });
+        }
+
+        function renderWrongAnswersTable() {
+            const body = document.getElementById('dash-wrong-body');
+            body.innerHTML = '';
+            // Show only latest 20 wrong answers for insight
+            allWrongAnswers.slice(-20).reverse().forEach(w => {
+                body.innerHTML += `<tr class="border-b"><td class="p-2 font-bold">${w["Staff Name"]}</td><td class="p-2">${w["Question Text"]}</td><td class="p-2 text-red-600">${w["Wrong Choice"]}</td><td class="p-2 text-green-600">${w["Correct Answer"]}</td></tr>`;
+            });
+        }
+
+        // SUPERVISOR DOWNLOAD: INTEGRATED REPORT (Reports + Wrong Answer Details)
+        function exportSupervisorIntegratedReport() {
+            if (allReports.length === 0) return alert("No manager reports found.");
+
+            const headers = ["Timestamp", "Manager", "Outlet", "Staff", "Quiz Score", "Topic", "Skill Level", "Manager Comments", "Performance Gaps", "WRONG ANSWERS LOG"];
+            let csvRows = [headers.join(",")];
+
+            allReports.forEach(r => {
+                // Find all wrong answers for this specific staff member
+                const wrongs = allWrongAnswers.filter(w => w["Staff Name"] === r["Staff Name"]);
+                const wrongText = wrongs.map(w => `[Q: ${w["Question Text"]} | User Choice: ${w["Wrong Choice"]} | Correct: ${w["Correct Answer"]}]`).join(" ; ");
+                
+                const row = [
+                    r.Timestamp,
+                    r.Manager,
+                    r.Outlet,
+                    r["Staff Name"],
+                    r["Quiz Score"],
+                    r["Training Title"],
+                    r["Skill Level"],
+                    `"${(r["Competency Comments"]||"").replace(/"/g, '""')}"`,
+                    `"${(r["Performance Gaps"]||"").replace(/"/g, '""')}"`,
+                    `"${wrongText.replace(/"/g, '""')}"`
+                ];
+                csvRows.push(row.join(","));
             });
 
-            document.getElementById('stat-total-quizzes').innerText = filtered.length;
-            document.getElementById('stat-avg-score').innerText = filtered.length ? Math.round(totalScore/filtered.length) + "%" : "0%";
-            document.getElementById('stat-outlets').innerText = [...new Set(filtered.map(r => r.Outlet))].length;
-            document.getElementById('stat-reports').innerText = allReports.length;
+            const blob = new Blob([csvRows.join("\n")], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Integrated_Assessment_Report_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+
+        function exportToCSV() {
+            let csv = "Timestamp,Name,Outlet,Score,Percentage,Topic\n";
+            allResults.forEach(r => { csv += `${r.Timestamp},${r.Name},${r.Outlet},${r.Score},${r.Percentage},${r.Topic}\n`; });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = "Quiz_Logs.csv";
+            a.click();
         }
     </script>
 </body>
