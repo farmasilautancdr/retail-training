@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RT Pro | RetailTraining</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
@@ -16,27 +14,27 @@
         .btn-grad { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; transition: 0.3s; }
         .btn-grad:active { transform: scale(0.96); }
         .loader-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 48px; height: 48px; border: 5px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .opt-btn { transition: all 0.2s; border: 2px solid #e2e8f0; text-align: left; padding: 1rem; border-radius: 1rem; background: white; font-weight: 500; }
+        /* FIX 1 & 2: Option Button Styles */
+        .opt-btn { transition: all 0.2s; border: 2px solid #e2e8f0; text-align: left; padding: 1.25rem; border-radius: 1rem; background: white; font-weight: 500; width: 100%; margin-bottom: 0.75rem; }
         .opt-correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
         .opt-wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
         .hidden { display: none !important; }
-        input, select, textarea { font-size: 16px !important; } /* Prevents iOS zoom */
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div id="loader" class="loader-overlay hidden">
         <div class="spinner"></div>
-        <p class="mt-4 font-bold text-indigo-600 animate-pulse">Syncing Data...</p>
+        <p class="mt-4 font-bold text-indigo-600 animate-pulse">Processing...</p>
     </div>
 
     <div class="max-w-4xl mx-auto">
         <div id="view-main" class="animate__animated animate__fadeIn">
             <header class="text-center mb-10">
                 <h1 class="text-4xl font-black text-indigo-600 tracking-tight">RT PRO</h1>
-                <p class="text-slate-500 font-medium">Retail Training Management</p>
+                <p class="text-slate-500 font-medium">Retail Training System</p>
             </header>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div onclick="showView('view-staff-login')" class="glass p-8 rounded-3xl text-center cursor-pointer shadow-lg border-b-4 border-indigo-500 active:scale-95 transition">
@@ -57,7 +55,7 @@
         <div id="view-staff-login" class="hidden animate__animated animate__fadeIn">
             <div class="glass p-8 rounded-3xl shadow-xl space-y-4">
                 <button onclick="goHome()" class="text-indigo-600 font-bold mb-2">← Back</button>
-                <h2 class="text-2xl font-bold">Staff Access</h2>
+                <h2 class="text-2xl font-bold">Start Assessment</h2>
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="setLang('en')" id="lang-en" class="p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold">English</button>
                     <button onclick="setLang('ms')" id="lang-ms" class="p-3 rounded-xl border-2 border-slate-200 font-bold">Malay</button>
@@ -67,7 +65,7 @@
                 <select id="staff-topic" class="w-full p-4 rounded-xl border bg-white font-bold text-indigo-600">
                     <option value="">Select Training Topic</option>
                 </select>
-                <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold text-lg shadow-lg">START QUIZ</button>
+                <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold text-lg">ENTER QUIZ</button>
             </div>
         </div>
 
@@ -75,11 +73,11 @@
             <div class="glass p-6 rounded-3xl shadow-xl">
                 <div class="flex justify-between items-center mb-6">
                     <button id="quiz-back-btn" onclick="goHome()" class="text-slate-400 font-bold">← Exit</button>
-                    <div id="quiz-progress" class="font-bold text-indigo-600 bg-indigo-50 px-4 py-1 rounded-full">Q 1/18</div>
+                    <div id="quiz-progress" class="font-bold text-indigo-600 bg-indigo-50 px-4 py-1 rounded-full">Q 1</div>
                 </div>
                 <div id="q-container" class="min-h-[250px]">
                     <h3 id="q-text" class="text-xl font-bold mb-8 leading-tight"></h3>
-                    <div id="options-grid" class="grid gap-3"></div>
+                    <div id="options-grid"></div>
                 </div>
                 <div class="mt-8 flex justify-end">
                     <button id="next-btn" onclick="nextQuestion()" class="hidden bg-slate-800 text-white px-8 py-3 rounded-xl font-bold">Next Question →</button>
@@ -96,7 +94,7 @@
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div class="glass p-4 rounded-2xl text-center border-b-4 border-blue-500">
-                    <p class="text-[10px] font-black text-slate-400">TOTAL STAFF</p>
+                    <p class="text-[10px] font-black text-slate-400">STAFF</p>
                     <h3 id="stat-staff" class="text-2xl font-black">0</h3>
                 </div>
                 <div class="glass p-4 rounded-2xl text-center border-b-4 border-green-500">
@@ -118,24 +116,20 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-red-50 text-red-800">
-                            <tr>
-                                <th class="p-3">Question</th>
-                                <th class="p-3">Correct Answer</th>
-                                <th class="p-3">Staff Errors</th>
-                            </tr>
+                            <tr><th class="p-3">Question</th><th class="p-3">Correct Answer</th><th class="p-3">Staff Errors</th></tr>
                         </thead>
-                        <tbody id="table-gaps" class="divide-y divide-red-50"></tbody>
+                        <tbody id="table-gaps"></tbody>
                     </table>
                 </div>
             </div>
 
             <div class="glass p-6 rounded-3xl shadow-xl">
-                <h3 class="text-xl font-bold mb-4">Complete Assessment Log</h3>
+                <h3 class="text-xl font-bold mb-4">Assessment Log</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 sticky top-0">
-                            <tr><th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3">Score %</th><th class="p-3">Topic</th></tr>
-                        </thead>
+                        <thead><tr class="bg-slate-50">
+                            <th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3">Score %</th><th class="p-3">Topic</th>
+                        </tr></thead>
                         <tbody id="table-log"></tbody>
                     </table>
                 </div>
@@ -143,58 +137,46 @@
         </div>
 
         <div id="view-manager-login" class="hidden">
-            <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto space-y-4">
-                <button onclick="goHome()" class="text-indigo-600 font-bold mb-2">← Back</button>
+            <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto space-y-4 text-center">
+                <button onclick="goHome()" class="text-indigo-600 font-bold mb-2 flex items-center">← Back</button>
                 <h2 class="text-2xl font-bold">Manager Login</h2>
                 <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-4 rounded-xl border"></select>
                 <select id="mgr-outlet" class="w-full p-4 rounded-xl border"></select>
                 <input type="password" id="mgr-pass" placeholder="Password" class="w-full p-4 rounded-xl border">
-                <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-xl font-bold">Login</button>
+                <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-xl font-bold">Enter Dashboard</button>
             </div>
         </div>
 
         <div id="view-manager-form" class="hidden">
             <div class="glass p-6 rounded-3xl shadow-xl space-y-6">
-                <div class="flex justify-between">
-                    <h2 class="text-xl font-bold">Assessment Report</h2>
-                    <button onclick="location.reload()" class="text-red-500 font-bold">Logout</button>
+                <div class="flex justify-between items-center border-b pb-4">
+                    <h2 class="text-xl font-bold">Performance Review</h2>
+                    <button onclick="location.reload()" class="text-red-500 font-bold text-sm">Logout</button>
                 </div>
-                <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl text-sm">
-                    <div><p class="text-xs text-slate-400">Manager</p><p id="disp-mgr-name" class="font-bold"></p></div>
-                    <div><p class="text-xs text-slate-400">Outlet</p><p id="disp-mgr-outlet" class="font-bold"></p></div>
+                <select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border font-bold text-indigo-700"></select>
+                <input type="date" id="rep-date" class="w-full p-4 rounded-xl border">
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-white p-3 rounded-xl border text-center"><p class="text-[10px] text-slate-400">Score</p><p id="disp-staff-score" class="text-lg font-black"></p></div>
+                    <div class="bg-white p-3 rounded-xl border text-center"><p class="text-[10px] text-slate-400">Percent</p><p id="disp-staff-perc" class="text-lg font-black"></p></div>
+                    <div id="disp-staff-level-box" class="p-3 rounded-xl text-center text-white font-bold uppercase"><p class="text-[10px]">Level</p><p id="disp-staff-level" class="text-lg"></p></div>
                 </div>
-                <div class="space-y-4">
-                    <select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border outline-none font-bold"></select>
-                    <select id="rep-topic" class="w-full p-4 rounded-xl border outline-none bg-slate-50" disabled></select>
-                    <input type="date" id="rep-date" class="w-full p-4 rounded-xl border">
-                    
-                    <div class="grid grid-cols-3 gap-2 text-center text-[10px]">
-                        <div class="bg-white p-3 rounded-xl border"><p>Raw Score</p><p id="disp-staff-score" class="text-lg font-black"></p></div>
-                        <div class="bg-white p-3 rounded-xl border"><p>Percent</p><p id="disp-staff-perc" class="text-lg font-black"></p></div>
-                        <div id="disp-staff-level-box" class="p-3 rounded-xl border text-white font-bold"><p>Level</p><p id="disp-staff-level" class="text-lg"></p></div>
-                    </div>
-
-                    <textarea id="mgr-comment" placeholder="Competency Comments" class="w-full p-4 border rounded-xl h-24"></textarea>
-                    <textarea id="mgr-housebrand" placeholder="Housebrand Focus" class="w-full p-4 border rounded-xl h-20"></textarea>
-                    <textarea id="mgr-gaps" placeholder="Performance Gaps" class="w-full p-4 border rounded-xl h-20"></textarea>
-                    <textarea id="mgr-recom" placeholder="Recommendations" class="w-full p-4 border rounded-xl h-20"></textarea>
-                    
-                    <div id="wrongs-container" class="p-4 bg-red-50 rounded-xl hidden text-xs text-red-700 space-y-1">
-                        <p class="font-bold mb-2 uppercase">Quiz Error History:</p>
-                        <div id="wrongs-list"></div>
-                    </div>
-                    
-                    <button onclick="submitManagerReport()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg">Submit Report</button>
+                <textarea id="mgr-comment" placeholder="Competency Comments" class="w-full p-4 border rounded-xl h-24"></textarea>
+                <textarea id="mgr-housebrand" placeholder="Housebrand Focus" class="w-full p-4 border rounded-xl h-20"></textarea>
+                <textarea id="mgr-gaps" placeholder="Performance Gaps" class="w-full p-4 border rounded-xl h-20"></textarea>
+                <textarea id="mgr-recom" placeholder="Recommendations" class="w-full p-4 border rounded-xl h-20"></textarea>
+                <div id="wrongs-container" class="p-4 bg-red-50 rounded-xl hidden text-xs text-red-700">
+                    <p class="font-bold mb-2">Quiz Gaps Identified:</p><div id="wrongs-list"></div>
                 </div>
+                <button onclick="submitManagerReport()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg">Submit Report</button>
             </div>
         </div>
 
         <div id="view-supervisor-login" class="hidden">
-            <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto space-y-4">
-                <button onclick="goHome()" class="text-indigo-600 font-bold mb-2">← Back</button>
-                <h2 class="text-2xl font-bold">Supervisor Access</h2>
-                <input type="password" id="sup-pass" placeholder="Admin Password" class="w-full p-4 rounded-xl border">
-                <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">View Analytics</button>
+            <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto space-y-4 text-center">
+                <button onclick="goHome()" class="text-indigo-600 font-bold mb-2 flex items-center">← Back</button>
+                <h2 class="text-2xl font-bold">Admin Portal</h2>
+                <input type="password" id="sup-pass" placeholder="Admin PIN" class="w-full p-4 rounded-xl border">
+                <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">Login</button>
             </div>
         </div>
 
@@ -210,7 +192,7 @@
         const managerData = [
             { id: "R1 - AMIRUL", outlets: ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"] },
             { id: "R2 - HAZWANI", outlets: ["AJ", "BJR", "BP", "HQCT", "KB", "PK", "WM"] },
-            { id: "R3 - HARIS", outlets: ["B6", "BB", "CDR", "HL", "HQ", "KL"] },
+            { id: "R3 - HARIS", outlets: ["B6", "BB", "CDR", "HL", "BG", "KL"] },
             { id: "R4 - RAIHAN", outlets: ["GB", "GBD", "JTH", "RJ", "ST", "TPOH"] },
             { id: "R5 - ADNIN", outlets: ["JL", "JLD", "PP", "PSPD", "SMR"] },
             { id: "R6 - NADHIRAH", outlets: ["KS", "MC", "MLR", "TM", "TMD", "TMT"] },
@@ -220,6 +202,7 @@
 
         window.onload = () => { initDropdowns(); fetchData(); };
 
+        // FIX 4: Optimized data fetch
         async function fetchData() {
             toggleLoader(true);
             try {
@@ -229,8 +212,8 @@
                 allResults = data.results || [];
                 allReports = data.reports || [];
                 allWrongAnswers = data.wrongAnswers || [];
-                populateManagerAssessData();
-            } catch (e) { alert("Network error. Check GAS deployment."); }
+                populateGlobalData();
+            } catch (e) { alert("Sync failed. Refresh or check connection."); }
             toggleLoader(false);
         }
 
@@ -243,28 +226,16 @@
             managerData.forEach(m => mgrS.innerHTML += `<option value="${m.id}">${m.id}</option>`);
         }
 
-        function populateManagerAssessData() {
+        function populateGlobalData() {
             const topics = [...new Set(allQuestions.map(q => q.topic))].filter(t => t);
             const staffTopic = document.getElementById('staff-topic');
-            const repTopic = document.getElementById('rep-topic');
             staffTopic.innerHTML = '<option value="">Select Training Topic</option>';
-            repTopic.innerHTML = '<option value="">Select Topic</option>';
-            topics.forEach(t => {
-                staffTopic.innerHTML += `<option value="${t}">${t}</option>`;
-                repTopic.innerHTML += `<option value="${t}">${t}</option>`;
-            });
+            topics.forEach(t => staffTopic.innerHTML += `<option value="${t}">${t}</option>`);
             const repStaff = document.getElementById('rep-staff');
             repStaff.innerHTML = '<option value="">Select Staff</option>';
             allResults.sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp)).forEach(r => {
                 repStaff.innerHTML += `<option value="${r.Name}">${r.Name} (${r.Topic})</option>`;
             });
-        }
-
-        function formatToPercent(val) {
-            let n = parseFloat(val);
-            if(isNaN(n)) return "0%";
-            if (n > 0 && n <= 1) return Math.round(n * 100) + "%";
-            return Math.round(n) + "%";
         }
 
         function showView(id) {
@@ -276,17 +247,20 @@
         function toggleLoader(s) { document.getElementById('loader').classList.toggle('hidden', !s); }
         function setLang(l) {
             currentLang = l;
-            document.getElementById('lang-en').className = l === 'en' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
-            document.getElementById('lang-ms').className = l === 'ms' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
+            document.getElementById('lang-en').classList.toggle('bg-indigo-600', l === 'en');
+            document.getElementById('lang-en').classList.toggle('text-white', l === 'en');
+            document.getElementById('lang-ms').classList.toggle('bg-indigo-600', l === 'ms');
+            document.getElementById('lang-ms').classList.toggle('text-white', l === 'ms');
         }
 
+        // --- QUIZ ---
         function startQuiz() {
             const name = document.getElementById('staff-name').value;
             const topic = document.getElementById('staff-topic').value;
             const outlet = document.getElementById('staff-outlet').value;
             if(!name || !topic || !outlet) return alert("Fill all details");
             currentQuizData = allQuestions.filter(q => q.topic == topic);
-            if(currentQuizData.length == 0) return alert("No questions found");
+            if(currentQuizData.length == 0) return alert("Topic not found");
             quizIdx = 0; score = 0; staffWrongs = [];
             renderQuestion();
             showView('view-quiz');
@@ -295,17 +269,22 @@
         function renderQuestion() {
             const q = currentQuizData[quizIdx];
             document.getElementById('quiz-back-btn').style.display = (quizIdx === 0) ? 'block' : 'none';
-            document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
+            document.getElementById('quiz-progress').innerText = `Question ${quizIdx+1}/${currentQuizData.length}`;
             document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
+            
             const grid = document.getElementById('options-grid');
             grid.innerHTML = '';
+            
+            // FIX 1 & 2: Dynamic Answer Buttons (Handles 4-opt and T/F)
             for(let i=1; i<=4; i++) {
                 const optText = currentLang === 'en' ? q[`opt${i}_en`] : q[`opt${i}_ms`];
-                if(!optText) continue;
+                if(!optText || optText.toString().trim() === "") continue;
                 const btn = document.createElement('button');
-                btn.className = "opt-btn shadow-sm";
+                btn.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
+                btn.style.animationDelay = (i * 0.1) + "s";
                 btn.innerText = optText;
-                btn.onclick = () => handleChoice(i, btn, q);
+                // Correct index logic: Spreadsheet 0,1,2,3 maps to opt1,2,3,4
+                btn.onclick = () => handleChoice(i - 1, btn, q);
                 grid.appendChild(btn);
             }
             document.getElementById('next-btn').classList.add('hidden');
@@ -313,15 +292,23 @@
         }
 
         function handleChoice(idx, btn, q) {
-            document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null);
-            const isCorrect = idx == q.correct;
-            if(isCorrect) { btn.classList.add('opt-correct'); score++; }
-            else {
-                btn.classList.add('opt-wrong');
-                const options = document.querySelectorAll('.opt-btn');
-                if(options[q.correct - 1]) options[q.correct - 1].classList.add('opt-correct');
-                staffWrongs.push({ qText: currentLang === 'en' ? q.question_en : q.question_ms, userChoice: currentLang === 'en' ? q[`opt${idx}_en`] : q[`opt${idx}_ms`], correctText: currentLang === 'en' ? q[`opt${q.correct}_en`] : q[`opt${q.correct}_ms`] });
+            const buttons = document.querySelectorAll('.opt-btn');
+            buttons.forEach(b => b.onclick = null); // Prevent double clicks
+            
+            const correctIdx = parseInt(q.correct);
+            if(idx === correctIdx) {
+                btn.classList.add('opt-correct', 'animate__pulse');
+                score++;
+            } else {
+                btn.classList.add('opt-wrong', 'animate__shakeX');
+                if(buttons[correctIdx]) buttons[correctIdx].classList.add('opt-correct');
+                staffWrongs.push({ 
+                    qText: currentLang === 'en' ? q.question_en : q.question_ms, 
+                    userChoice: btn.innerText, 
+                    correctText: buttons[correctIdx] ? buttons[correctIdx].innerText : "N/A" 
+                });
             }
+            
             if(quizIdx < currentQuizData.length - 1) document.getElementById('next-btn').classList.remove('hidden');
             else document.getElementById('submit-quiz-btn').classList.remove('hidden');
         }
@@ -330,17 +317,29 @@
 
         async function saveQuizResult() {
             toggleLoader(true);
-            const payload = { action: 'save_result', name: document.getElementById('staff-name').value.toUpperCase().trim(), outlet: document.getElementById('staff-outlet').value, topic: document.getElementById('staff-topic').value, score: `${score}/${currentQuizData.length}`, perc: Math.round((score/currentQuizData.length) * 100) + "%", wrongAnswers: staffWrongs };
-            try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); alert("Quiz Submitted!"); location.reload(); }
-            catch(e) { alert("Error"); toggleLoader(false); }
+            const payload = { 
+                action: 'save_result', 
+                name: document.getElementById('staff-name').value.toUpperCase().trim(), 
+                outlet: document.getElementById('staff-outlet').value, 
+                topic: document.getElementById('staff-topic').value, 
+                score: `${score}/${currentQuizData.length}`, 
+                perc: Math.round((score/currentQuizData.length) * 100) + "%", 
+                wrongAnswers: staffWrongs 
+            };
+            try { 
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                alert("Assessment Submitted!"); 
+                location.reload(); 
+            } catch(e) { alert("Sync Error"); toggleLoader(false); }
         }
 
+        // --- MANAGER ---
         function loginManager() {
             if(document.getElementById('mgr-pass').value === "1234") {
                 document.getElementById('disp-mgr-name').innerText = document.getElementById('mgr-select').value;
                 document.getElementById('disp-mgr-outlet').innerText = document.getElementById('mgr-outlet').value;
                 showView('view-manager-form');
-            } else alert("Invalid Password");
+            } else alert("Denied");
         }
 
         function updateMgrOutlets() {
@@ -357,7 +356,6 @@
                 document.getElementById('disp-staff-score').innerText = res.Score;
                 const cleanPerc = formatToPercent(res.Percentage);
                 document.getElementById('disp-staff-perc').innerText = cleanPerc;
-                document.getElementById('rep-topic').value = res.Topic;
                 
                 const num = parseInt(cleanPerc);
                 let lvl = "LOW", col = "#ef4444";
@@ -381,12 +379,34 @@
         async function submitManagerReport() {
             if(!document.getElementById('rep-date').value) return alert("Select date");
             toggleLoader(true);
-            const payload = { action: 'save_report', manager: document.getElementById('mgr-select').value, outlet: document.getElementById('mgr-outlet').value, staffName: document.getElementById('rep-staff').value, staffScore: document.getElementById('disp-staff-perc').innerText, trainTitle: document.getElementById('rep-topic').value, trainingDate: document.getElementById('rep-date').value, level: document.getElementById('disp-staff-level').innerText, comments: document.getElementById('mgr-comment').value, focus: document.getElementById('mgr-housebrand').value, gaps: document.getElementById('mgr-gaps').value, rec: document.getElementById('mgr-recom').value };
-            try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); alert("Report Submitted!"); location.reload(); }
-            catch(e) { alert("Error saving report."); toggleLoader(false); }
+            const payload = { 
+                action: 'save_report', 
+                manager: document.getElementById('mgr-select').value, 
+                outlet: document.getElementById('mgr-outlet').value, 
+                staffName: document.getElementById('rep-staff').value, 
+                staffScore: document.getElementById('disp-staff-perc').innerText, 
+                trainTitle: allResults.find(r => r.Name === document.getElementById('rep-staff').value).Topic, 
+                trainingDate: document.getElementById('rep-date').value, 
+                level: document.getElementById('disp-staff-level').innerText, 
+                comments: document.getElementById('mgr-comment').value, 
+                focus: document.getElementById('mgr-housebrand').value, 
+                gaps: document.getElementById('mgr-gaps').value, 
+                rec: document.getElementById('mgr-recom').value 
+            };
+            try { 
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                alert("Report Saved!"); 
+                location.reload(); 
+            } catch(e) { alert("Save Error"); toggleLoader(false); }
         }
 
-        function loginSupervisor() { if(document.getElementById('sup-pass').value === "admin") { renderSupervisorStats(); showView('view-supervisor-dash'); } else alert("Denied"); }
+        // --- SUPERVISOR ---
+        function loginSupervisor() {
+            if(document.getElementById('sup-pass').value === "admin") {
+                renderSupervisorStats();
+                showView('view-supervisor-dash');
+            } else alert("Denied");
+        }
 
         function renderSupervisorStats() {
             document.getElementById('stat-staff').innerText = allResults.length;
@@ -395,29 +415,28 @@
             const avg = allResults.length ? Math.round(allResults.reduce((a,b) => a + parseInt(formatToPercent(b.Percentage)), 0) / allResults.length) : 0;
             document.getElementById('stat-avg').innerText = avg + "%";
             
-            // Render Table
             document.getElementById('table-log').innerHTML = allResults.map(r => `
                 <tr class="border-b">
-                    <td class="p-3 text-slate-400">${new Date(r.Timestamp).toLocaleDateString('en-GB')}</td>
+                    <td class="p-3 text-slate-400 text-xs">${new Date(r.Timestamp).toLocaleDateString('en-GB')}</td>
                     <td class="p-3 font-bold uppercase text-[10px]">${r.Name}</td>
                     <td class="p-3">${r.Outlet}</td>
                     <td class="p-3 text-indigo-600 font-bold">${formatToPercent(r.Percentage)}</td>
                     <td class="p-3 text-xs text-slate-400">${r.Topic}</td>
                 </tr>`).join('');
 
-            // Requirement 2: Training Gaps Analysis
+            // FIX 2: Training Gaps Analysis
             const gaps = {};
             allWrongAnswers.forEach(w => {
                 const q = w["Question Text"] || w.qText;
                 if(!gaps[q]) gaps[q] = { correct: (w["Correct Answer"] || w.correctText), count: 0 };
                 gaps[q].count++;
             });
-            const sortedGaps = Object.entries(gaps).sort((a,b) => b[1].count - a[1].count).slice(0, 8);
+            const sortedGaps = Object.entries(gaps).sort((a,b) => b[1].count - a[1].count).slice(0, 10);
             document.getElementById('table-gaps').innerHTML = sortedGaps.map(([q, details]) => `
                 <tr class="border-b border-red-50">
-                    <td class="p-3 font-medium">${q}</td>
-                    <td class="p-3 text-green-600 font-bold">${details.correct}</td>
-                    <td class="p-3 text-center"><span class="bg-red-100 text-red-600 px-3 py-1 rounded-full font-black">${details.count}</span></td>
+                    <td class="p-3 font-medium text-[11px]">${q}</td>
+                    <td class="p-3 text-green-600 font-bold text-[11px]">${details.correct}</td>
+                    <td class="p-3 text-center"><span class="bg-red-100 text-red-600 px-3 py-1 rounded-full font-black text-xs">${details.count}</span></td>
                 </tr>`).join('');
         }
 
@@ -432,7 +451,7 @@
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = 'RT_PRO_Full_Report.csv'; a.click();
+            a.href = url; a.download = 'RT_Assessment_Data.csv'; a.click();
         }
     </script>
 </body>
