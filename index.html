@@ -275,45 +275,82 @@
         }
 
         function renderQuestion() {
-            const q = currentQuizData[quizIdx];
-            document.getElementById('quiz-back-btn').classList.toggle('hidden', quizIdx > 0);
-            document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
-            document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
-            const grid = document.getElementById('options-grid');
-            grid.innerHTML = '';
+    const q = currentQuizData[quizIdx];
+    
+    // UI Updates
+    document.getElementById('quiz-back-btn').classList.toggle('hidden', quizIdx > 0);
+    document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
+    document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
+    
+    const grid = document.getElementById('options-grid');
+    grid.innerHTML = '';
+    
+    // Loop through all 4 potential options
+    for(let i=1; i<=4; i++) {
+        const optEn = q[`opt${i}_en`];
+        const optMs = q[`opt${i}_ms`];
+        
+        // Select text based on language
+        let optText = currentLang === 'en' ? optEn : (optMs || optEn);
+
+        // FIX: Only create a button if the option text actually exists
+        // This handles T/F (where opt3/4 are empty) and 4-choice questions
+        if (optText !== undefined && optText !== null && optText.toString().trim() !== "") {
+            const btn = document.createElement('button');
+            btn.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
+            btn.innerText = optText;
             
-            for(let i=1; i<=4; i++) {
-                const optEn = q[`opt${i}_en`];
-                const optMs = q[`opt${i}_ms`];
-                let optText = currentLang === 'en' ? optEn : (optMs || optEn);
-                
-                if (optText && optText.toString().trim() !== "") {
-                    const btn = document.createElement('button');
-                    btn.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
-                    btn.innerText = optText;
-                    btn.onclick = () => handleChoice(i - 1, btn, q); 
-                    grid.appendChild(btn);
-                }
-            }
-            document.getElementById('next-btn').classList.add('hidden');
-            document.getElementById('submit-quiz-btn').classList.add('hidden');
+            // The index (i-1) ensures 0, 1, 2, or 3 is sent to handleChoice
+            btn.onclick = () => handleChoice(i - 1, btn, q); 
+            grid.appendChild(btn);
         }
+    }
+    
+    document.getElementById('next-btn').classList.add('hidden');
+    document.getElementById('submit-quiz-btn').classList.add('hidden');
+}
 
         function handleChoice(idx, btn, q) {
-            const buttons = document.querySelectorAll('.opt-btn');
-            buttons.forEach(b => b.onclick = null);
-            const correctIdx = parseInt(q.correct);
-            if(idx === correctIdx) {
-                btn.classList.add('opt-correct');
-                score++;
-            } else {
-                btn.classList.add('opt-wrong');
-                buttons.forEach((b, i) => { if (i === correctIdx) b.classList.add('opt-correct'); });
-                staffWrongs.push({ qText: q.question_en, userChoice: btn.innerText, correctText: q[`opt${correctIdx + 1}_en`] });
+    // Disable all buttons immediately to prevent double-clicking/cheating
+    const buttons = document.querySelectorAll('.opt-btn');
+    buttons.forEach(b => b.onclick = null);
+
+    // Get the correct index from the spreadsheet (0, 1, 2, or 3)
+    const correctIdx = parseInt(q.correct);
+    
+    // Check if user is correct
+    if (idx === correctIdx) {
+        btn.classList.add('opt-correct');
+        score++;
+    } else {
+        // Highlight selected as wrong (Red)
+        btn.classList.add('opt-wrong');
+        
+        // Highlight the correct one (Green)
+        // We look through our actual rendered buttons to find the correct text match
+        buttons.forEach((b, i) => {
+            // Because our loop only renders existing options, 
+            // we match the button's intended index to the correctIdx
+            if (i === correctIdx) {
+                b.classList.add('opt-correct');
             }
-            if(quizIdx < currentQuizData.length - 1) document.getElementById('next-btn').classList.remove('hidden');
-            else document.getElementById('submit-quiz-btn').classList.remove('hidden');
-        }
+        });
+
+        // Record the error for the Supervisor Report
+        staffWrongs.push({
+            qText: currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en),
+            userChoice: btn.innerText,
+            correctText: q[`opt${correctIdx + 1}_en`] // +1 because sheet is opt1, opt2...
+        });
+    }
+
+    // Show the "Next" or "Submit" button
+    if (quizIdx < currentQuizData.length - 1) {
+        document.getElementById('next-btn').classList.remove('hidden');
+    } else {
+        document.getElementById('submit-quiz-btn').classList.remove('hidden');
+    }
+}
 
         function nextQuestion() { quizIdx++; renderQuestion(); }
 
@@ -486,3 +523,4 @@
     </script>
 </body>
 </html>
+
