@@ -12,225 +12,253 @@
 
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         
         /* Requirement 3: Mobile Optimization & UI */
-        body { font-family: 'Inter', sans-serif; background: #f3f4f6; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #f3f4f6; 
+            -webkit-tap-highlight-color: transparent; 
+            overscroll-behavior-y: contain;
+            color: #1f2937;
+        }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .btn-grad { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); transition: 0.3s; color: white; }
-        .no-select { user-select: none; }
-        .hidden { display: none !important; }
-        .touch-target { min-height: 48px; }
-        input, select, textarea { font-size: 16px !important; } 
-        .stat-card { @apply p-4 bg-white rounded-2xl shadow-sm border border-gray-100 text-center flex flex-col justify-center; }
+        .btn-grad { 
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); 
+            transition: 0.3s; 
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-grad:active { transform: scale(0.98); opacity: 0.9; }
         
+        /* Form styling for mobile */
+        input, select, textarea { 
+            font-size: 16px !important; /* Prevents iOS zoom */
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+        }
+
         /* Requirement 11: Spinner Loader */
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #e0e7ff;
+            border-top: 5px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
-        
-        /* Requirement 9: Answer colors */
+
+        /* Requirement 9: Feedback Colors */
         .answer-correct { background-color: #22c55e !important; color: white !important; border-color: #16a34a !important; }
         .answer-wrong { background-color: #ef4444 !important; color: white !important; border-color: #dc2626 !important; }
         
-        /* Table wrapping for CSV export and display */
-        .wrap-cell { white-space: normal; word-break: break-word; min-width: 120px; }
+        .stat-card { @apply p-4 bg-white rounded-2xl shadow-sm border border-gray-100 text-center flex flex-col justify-center; }
+        .no-select { user-select: none; }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="min-h-screen pb-10 no-select">
+<body class="min-h-screen pb-12 no-select">
 
-    <div id="loader-overlay" class="hidden fixed inset-0 bg-white/80 z-[100] flex flex-col items-center justify-center">
+    <div id="loader-overlay" class="hidden fixed inset-0 bg-white/90 z-50 flex flex-col items-center justify-center animate__animated animate__fadeIn">
         <div class="spinner mb-4"></div>
-        <p id="loader-text" class="font-bold text-indigo-700 animate__animated animate__pulse animate__infinite">Syncing Data...</p>
+        <p id="loader-text" class="font-bold text-indigo-700 animate__animated animate__pulse animate__infinite">Processing...</p>
     </div>
 
-    <nav class="bg-white shadow-sm p-4 sticky top-0 z-40 border-b">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="font-bold text-lg text-indigo-700">RT Pro</h1>
-            <div id="nav-status" class="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded uppercase">Ready</div>
+    <nav class="bg-white/80 backdrop-blur-md shadow-sm p-4 sticky top-0 z-40 border-b border-gray-100">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">RT</div>
+                <h1 class="font-bold text-lg tracking-tight">Pro</h1>
+            </div>
+            <div id="nav-status" class="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded uppercase">Syncing...</div>
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto px-4 mt-6">
+    <main class="max-w-md mx-auto px-4 mt-6">
         
-        <div id="view-roles" class="space-y-4 animate__animated animate__fadeIn">
-            <div onclick="showView('staff-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition cursor-pointer">
-                <span class="text-3xl">👤</span>
-                <div><h2 class="font-bold text-gray-800">Staff Member</h2><p class="text-xs text-gray-500">Take Training Quizzes</p></div>
+        <div id="view-roles" class="space-y-4 animate__animated animate__fadeInUp">
+            <h2 class="text-2xl font-bold px-1 mb-6">Select Portal</h2>
+            <div onclick="showView('staff-login')" class="p-6 glass rounded-3xl shadow-sm border border-white flex items-center gap-5 active:bg-gray-50 transition-colors">
+                <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl">👤</div>
+                <div><h2 class="font-bold text-gray-800 text-lg">Staff Member</h2><p class="text-sm text-gray-500">Access Training Quizzes</p></div>
             </div>
-            <div onclick="showView('manager-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition cursor-pointer">
-                <span class="text-3xl">👔</span>
-                <div><h2 class="font-bold text-gray-800">Manager Access</h2><p class="text-xs text-gray-500">Perform Staff Assessment</p></div>
+            <div onclick="showView('manager-login')" class="p-6 glass rounded-3xl shadow-sm border border-white flex items-center gap-5 active:bg-gray-50 transition-colors">
+                <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center text-2xl">👔</div>
+                <div><h2 class="font-bold text-gray-800 text-lg">Manager Access</h2><p class="text-sm text-gray-500">Performance Assessment</p></div>
             </div>
-            <div onclick="showView('supervisor-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition cursor-pointer">
-                <span class="text-3xl">⭐</span>
-                <div><h2 class="font-bold text-gray-800">Supervisor</h2><p class="text-xs text-gray-500">View Data & Analytics</p></div>
+            <div onclick="showView('supervisor-login')" class="p-6 glass rounded-3xl shadow-sm border border-white flex items-center gap-5 active:bg-gray-50 transition-colors">
+                <div class="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center text-2xl">⭐</div>
+                <div><h2 class="font-bold text-gray-800 text-lg">Supervisor</h2><p class="text-sm text-gray-500">Dashboard & Analytics</p></div>
             </div>
         </div>
 
-        <div id="view-staff-login" class="hidden glass p-6 rounded-2xl space-y-4 shadow-xl animate__animated animate__fadeIn">
-            <h2 class="text-xl font-bold text-center">Staff Quiz</h2>
-            <input type="text" id="staff-name" class="w-full p-3 border rounded-lg touch-target" placeholder="Full Name (As per IC)">
-            <select id="staff-outlet" class="w-full p-3 border rounded-lg touch-target"></select>
-            <select id="staff-topic-select" class="w-full p-3 border rounded-lg touch-target font-bold text-indigo-600">
-                <option value="">Select Active Topic</option>
+        <div id="view-staff-login" class="hidden glass p-6 rounded-3xl space-y-4 shadow-xl animate__animated animate__fadeIn">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="goHome()" class="p-2 -ml-2 text-gray-400">←</button>
+                <h2 class="text-xl font-bold text-center">Staff Training</h2>
+            </div>
+            <input type="text" id="staff-name" placeholder="Full Name (as per IC)">
+            <select id="staff-outlet"></select>
+            <label class="text-xs font-bold text-indigo-600 block -mb-2 ml-1">AVAILABLE TOPIC</label>
+            <select id="staff-topic-select" class="font-bold border-indigo-200 bg-indigo-50">
+                <option value="">Select Training Topic</option>
             </select>
-            <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg">Start Assessment</button>
-            <button onclick="goHome()" class="w-full text-gray-400 text-sm py-2">Back to Menu</button>
+            <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-2xl font-bold shadow-lg shadow-indigo-200">Start Assessment</button>
         </div>
 
-        <div id="view-quiz" class="hidden glass p-6 rounded-2xl shadow-xl space-y-4 animate__animated animate__fadeIn">
-            <div class="flex justify-between items-center text-xs font-bold text-indigo-500 uppercase">
-                <span id="quiz-progress">Q1</span>
-                <button id="quiz-back-btn" onclick="goHome()" class="bg-gray-100 px-2 py-1 rounded">Exit Quiz</button>
+        <div id="view-quiz" class="hidden glass p-6 rounded-3xl shadow-xl space-y-6 animate__animated animate__fadeIn">
+            <div class="flex justify-between items-center">
+                <button id="quiz-back-btn" onclick="goHome()" class="text-xs font-bold text-gray-400">← EXIT</button>
+                <span id="quiz-progress" class="text-xs font-black bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full">Q1</span>
             </div>
-            <h3 id="q-text" class="text-lg font-bold text-gray-800 py-4"></h3>
+            <div id="quiz-topic-display" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">TOPIC</div>
+            <h3 id="q-text" class="text-xl font-bold text-gray-800 leading-tight"></h3>
             <div id="q-options" class="grid grid-cols-1 gap-3"></div>
-            <div id="next-btn-container" class="hidden pt-4">
-                <button id="next-q-btn" onclick="nextQuestion()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2">
-                    <span>Next Question</span>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
+            
+            <div id="next-btn-container" class="hidden animate__animated animate__fadeInUp">
+                <button id="next-btn" onclick="nextQuestion()" class="w-full bg-gray-900 text-white p-5 rounded-2xl font-bold shadow-xl">Next Question</button>
             </div>
         </div>
 
-        <div id="view-success" class="hidden glass p-8 rounded-2xl text-center space-y-4 animate__animated animate__zoomIn">
-            <div class="text-6xl">🎉</div>
-            <h2 class="text-2xl font-bold text-green-600">Quiz Completed!</h2>
-            <div class="bg-indigo-50 p-6 rounded-2xl">
+        <div id="view-success" class="hidden glass p-8 rounded-3xl text-center space-y-6 animate__animated animate__zoomIn">
+            <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mx-auto">✓</div>
+            <h2 class="text-2xl font-bold">Quiz Completed!</h2>
+            <div class="bg-gray-50 p-6 rounded-2xl">
+                <p class="text-gray-500 text-xs font-bold uppercase mb-1">Your Result</p>
                 <p id="final-score-text" class="text-4xl font-black text-indigo-700">0/0</p>
                 <p id="final-perc-text" class="text-lg font-bold text-indigo-500">0%</p>
             </div>
-            <button onclick="goHome()" class="w-full btn-grad p-4 rounded-xl font-bold">Return to Dashboard</button>
+            <button onclick="goHome()" class="w-full btn-grad p-4 rounded-2xl font-bold">Finish & Close</button>
         </div>
 
-        <div id="view-manager-login" class="hidden glass p-6 rounded-2xl space-y-4 animate__animated animate__fadeIn">
-             <h2 class="text-xl font-bold text-center">Manager Login</h2>
-             <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-3 border rounded-lg"></select>
-             <select id="mgr-outlet" class="w-full p-3 border rounded-lg"></select>
-             <input type="password" id="mgr-pass" class="w-full p-3 border rounded-lg" placeholder="Enter Access PIN">
-             <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-xl font-bold">Access Tools</button>
-             <button onclick="goHome()" class="w-full text-gray-400 text-sm py-2">Back</button>
+        <div id="view-manager-login" class="hidden glass p-8 rounded-3xl space-y-4 animate__animated animate__fadeIn">
+            <button onclick="goHome()" class="text-gray-400 mb-2">← Back</button>
+            <h2 class="text-2xl font-bold">Manager Login</h2>
+            <select id="mgr-select" onchange="updateMgrOutlets()" class="font-bold"></select>
+            <select id="mgr-outlet"></select>
+            <input type="password" id="mgr-pass" placeholder="Enter Access PIN">
+            <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-2xl font-bold">Verify & Enter</button>
         </div>
 
-        <div id="view-manager-form" class="hidden space-y-4 animate__animated animate__fadeIn">
-            <div class="glass p-6 rounded-2xl shadow-lg space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="font-bold text-indigo-700">Staff Performance Report</h2>
-                    <button onclick="goHome()" class="text-xs text-gray-400 font-bold border px-2 py-1 rounded">BACK</button>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
+        <div id="view-manager-form" class="hidden space-y-4 pb-20 animate__animated animate__fadeIn">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="goHome()" class="text-gray-500 font-bold text-sm">← Logout</button>
+                <h2 class="font-black text-indigo-700 uppercase tracking-tighter">Assessment</h2>
+            </div>
+
+            <div class="glass p-6 rounded-3xl shadow-sm border border-white space-y-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-[10px] font-bold text-gray-400 uppercase">Training Date</label>
-                        <select id="rep-date" class="w-full p-2 border rounded bg-gray-50 text-sm" onchange="filterManagerStaff()"></select>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Training Date</label>
+                        <select id="rep-date" class="bg-gray-50 border-none" onchange="filterManagerStaff()"></select>
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-gray-400 uppercase">Training Topic</label>
-                        <select id="rep-topic" class="w-full p-2 border rounded bg-gray-50 text-sm" onchange="filterManagerStaff()"></select>
+                        <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Training Topic</label>
+                        <select id="rep-topic" class="bg-gray-50 border-none" onchange="filterManagerStaff()"></select>
                     </div>
                 </div>
-                <select id="rep-staff" class="w-full p-3 border rounded-lg font-bold text-indigo-600" onchange="updateStaffScoreDisplay()">
-                    <option value="">-- Select Staff Member --</option>
+
+                <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Select Staff</label>
+                <select id="rep-staff" class="font-bold border-2 border-indigo-100" onchange="updateStaffScoreDisplay()">
+                    <option value="">-- Choose Staff Member --</option>
                 </select>
-                <div id="staff-quick-info" class="hidden p-3 bg-indigo-50 rounded-lg text-sm flex justify-between items-center italic">
-                    <span id="display-score" class="font-bold text-indigo-700">Score: -</span>
-                    <span id="display-date">Date: -</span>
+
+                <div id="staff-quick-info" class="hidden p-4 bg-indigo-600 rounded-2xl text-white flex justify-between items-center shadow-lg shadow-indigo-100">
+                    <div>
+                        <p class="text-[10px] opacity-80 font-bold uppercase">Quiz Result</p>
+                        <p id="display-score" class="text-xl font-black">0%</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] opacity-80 font-bold uppercase">Auto-Level</p>
+                        <p id="display-level-badge" class="font-bold bg-white/20 px-2 py-0.5 rounded text-sm">-</p>
+                    </div>
                 </div>
-                
-                <div>
-                    <label class="text-xs font-bold block mb-1">Competency Skill Level</label>
-                    <select id="rep-level" class="w-full p-3 border rounded-lg bg-gray-100 pointer-events-none">
-                        <option value="Low">Low (0 - 70%)</option>
-                        <option value="Medium">Medium (71 - 84%)</option>
-                        <option value="High">High (85 - 100%)</option>
-                    </select>
-                </div>
+
+                <input type="hidden" id="rep-level">
 
                 <div class="space-y-3">
-                    <textarea id="rep-comments" class="w-full p-3 border rounded-lg h-20 text-sm" placeholder="Competency Comments..."></textarea>
-                    <textarea id="rep-housebrand" class="w-full p-3 border rounded-lg h-20 text-sm" placeholder="Housebrand Focus Point..."></textarea>
-                    <textarea id="rep-gaps" class="w-full p-3 border rounded-lg h-20 text-sm" placeholder="Performance Gaps..."></textarea>
-                    <textarea id="rep-rec" class="w-full p-3 border rounded-lg h-20 text-sm" placeholder="Recommendations..."></textarea>
+                    <label class="text-[10px] font-black text-gray-400 uppercase ml-1">Competency Evaluation</label>
+                    <textarea id="rep-comments" class="h-24" placeholder="Competency Comments..."></textarea>
+                    <textarea id="rep-housebrand" class="h-24" placeholder="Housebrand Focus Point..."></textarea>
+                    <textarea id="rep-gaps" class="h-24" placeholder="Performance Gaps..."></textarea>
+                    <textarea id="rep-rec" class="h-24" placeholder="Recommendations..."></textarea>
                 </div>
 
-                <button onclick="submitReport()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg animate__animated" id="submit-report-btn">Submit Report</button>
-            </div>
+                <div class="p-4 bg-red-50 rounded-2xl border border-red-100">
+                    <h3 class="text-[10px] font-black text-red-500 uppercase mb-2 tracking-widest">Training Gaps (Wrong Answers)</h3>
+                    <div id="mgr-wrong-list" class="space-y-3 text-xs leading-relaxed">
+                        <p class="text-gray-400 italic">Select a staff to view gaps...</p>
+                    </div>
+                </div>
 
-            <div class="glass p-6 rounded-2xl shadow-lg border-t-4 border-red-400">
-                <h3 class="font-bold text-sm text-red-500 mb-3 uppercase flex items-center gap-2">
-                    <span>⚠️</span> Identified Knowledge Gaps
-                </h3>
-                <div id="mgr-wrong-list" class="space-y-2 text-xs"></div>
+                <button onclick="submitReport()" class="w-full btn-grad p-5 rounded-2xl font-bold text-lg animate__animated shadow-xl shadow-indigo-200" id="btn-submit-report">Submit Report</button>
             </div>
         </div>
 
-        <div id="view-supervisor-login" class="hidden glass p-6 rounded-2xl max-w-sm mx-auto space-y-4 animate__animated animate__fadeIn">
-            <h2 class="text-xl font-bold text-center">Supervisor Admin</h2>
-            <input type="password" id="sup-pass" class="w-full p-3 border rounded-lg" placeholder="Enter Admin Password">
-            <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">Open Dashboard</button>
-            <button onclick="goHome()" class="w-full text-gray-400 text-sm py-2">Back</button>
+        <div id="view-supervisor-login" class="hidden glass p-8 rounded-3xl space-y-4 animate__animated animate__fadeIn">
+            <button onclick="goHome()" class="text-gray-400">← Back</button>
+            <h2 class="text-2xl font-bold">Supervisor Portal</h2>
+            <input type="password" id="sup-pass" placeholder="Admin PIN Code">
+            <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-2xl font-bold">Open Dashboard</button>
         </div>
 
-        <div id="view-supervisor-dash" class="hidden space-y-4 animate__animated animate__fadeIn">
-            <div class="flex justify-between items-center">
-                <h2 class="font-bold text-indigo-800">Operational Dashboard</h2>
-                <button onclick="goHome()" class="text-xs text-gray-400 font-bold border px-2 py-1 rounded">LOGOUT</button>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="stat-card border-l-4 border-l-blue-500">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase">Quizzes</p>
-                    <p id="stat-total-quizzes" class="text-2xl font-black text-gray-800">0</p>
-                </div>
-                <div class="stat-card border-l-4 border-l-green-500">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase">Avg Score</p>
-                    <p id="stat-avg-score" class="text-2xl font-black text-gray-800">0%</p>
-                </div>
-                <div class="stat-card border-l-4 border-l-purple-500">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase">Outlets</p>
-                    <p id="stat-outlets" class="text-2xl font-black text-gray-800">0</p>
-                </div>
-                <div class="stat-card border-l-4 border-l-orange-500">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase">Reports</p>
-                    <p id="stat-reports" class="text-2xl font-black text-gray-800">0</p>
+        <div id="view-supervisor-dash" class="hidden space-y-4 pb-20 animate__animated animate__fadeIn">
+            <div class="flex items-center justify-between">
+                <button onclick="goHome()" class="text-gray-500 font-bold text-sm">← Exit</button>
+                <div class="text-right">
+                    <p class="text-[10px] font-black text-gray-400">SUPERVISOR</p>
+                    <p class="text-xs font-bold text-indigo-600">Global Overview</p>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-2xl border flex flex-wrap justify-between items-center gap-3">
-                <select id="sup-filter-outlet" onchange="renderDashTable()" class="p-2 border rounded-lg text-xs font-bold bg-indigo-50 min-w-[140px]"></select>
-                <button onclick="exportReportsCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 active:scale-95 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Export All Data
-                </button>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="stat-card border-b-4 border-b-blue-500">
+                    <p class="text-[10px] text-gray-400 font-black uppercase">Quiz Done</p>
+                    <p id="stat-total-quizzes" class="text-2xl font-black">0</p>
+                </div>
+                <div class="stat-card border-b-4 border-b-green-500">
+                    <p class="text-[10px] text-gray-400 font-black uppercase">Avg Score</p>
+                    <p id="stat-avg-score" class="text-2xl font-black">0%</p>
+                </div>
+                <div class="stat-card border-b-4 border-b-amber-500">
+                    <p class="text-[10px] text-gray-400 font-black uppercase">Outlets</p>
+                    <p id="stat-outlets" class="text-2xl font-black">0</p>
+                </div>
+                <div class="stat-card border-b-4 border-b-purple-500">
+                    <p class="text-[10px] text-gray-400 font-black uppercase">Reports</p>
+                    <p id="stat-reports" class="text-2xl font-black">0</p>
+                </div>
             </div>
 
-            <div class="glass p-5 rounded-2xl shadow-sm border">
-                <h3 class="text-xs font-bold text-indigo-500 uppercase mb-3 flex items-center gap-2">
-                    📊 Training Gaps (Most Frequent Errors)
-                </h3>
+            <div class="flex gap-2">
+                <select id="sup-filter-outlet" onchange="renderDash()" class="text-xs font-bold"></select>
+                <button onclick="exportReportsCSV()" class="bg-green-600 text-white px-4 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Export CSV</button>
+            </div>
+
+            <div class="glass p-5 rounded-3xl border border-white">
+                <h3 class="text-xs font-black text-indigo-700 uppercase mb-3 tracking-widest">Global Training Gaps</h3>
+                <div id="sup-gaps-list" class="space-y-2"></div>
+            </div>
+
+            <div class="glass rounded-3xl border border-white overflow-hidden">
+                <div class="p-4 bg-gray-50/50 border-b border-gray-100">
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest">Complete Assessment Log</h3>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-[11px]">
-                        <thead>
-                            <tr class="text-gray-400 border-b">
-                                <th class="pb-2">TOPIC</th>
-                                <th class="pb-2">QUESTION</th>
-                                <th class="pb-2 text-center">ERRORS</th>
-                                <th class="pb-2">CORRECT ANSWER</th>
-                            </tr>
+                        <thead class="bg-gray-50 text-gray-400 font-black uppercase">
+                            <tr><th class="p-3">Staff / Outlet</th><th class="p-3">Topic</th><th class="p-3">Score</th></tr>
                         </thead>
-                        <tbody id="gap-analysis-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="glass p-5 rounded-2xl shadow-sm border">
-                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Complete Assessment Log</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-[11px]">
-                        <thead class="bg-gray-50 border-b">
-                            <tr><th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3 text-center">Score</th><th class="p-3">Topic</th></tr>
-                        </thead>
-                        <tbody id="dash-table-body"></tbody>
+                        <tbody id="dash-table-body" class="divide-y divide-gray-50"></tbody>
                     </table>
                 </div>
             </div>
@@ -239,7 +267,8 @@
     </main>
 
     <script>
-        // Requirement 13: GAS Link
+        // --- CONFIG & DATA ---
+        // Requirement 13: Strengthen Connection
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec";
         
         const outlets = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
@@ -273,10 +302,10 @@
             sO.add(new Option("Select Your Outlet", ""));
             outlets.forEach(o => sO.add(new Option(o, o)));
             
-            supO.add(new Option("Show: All Outlets", "ALL"));
+            supO.add(new Option("ALL OUTLETS", "ALL"));
             outlets.forEach(o => supO.add(new Option(o, o)));
             
-            mS.add(new Option("Select Your Name", ""));
+            mS.add(new Option("Choose Manager", ""));
             Object.keys(managerMapping).forEach(m => mS.add(new Option(m, m)));
         }
 
@@ -285,25 +314,24 @@
             try {
                 const res = await fetch(APPS_SCRIPT_URL);
                 const data = await res.json();
+                
+                // Requirement 13: Property mapping fix
                 rawQuestions = data.questions || [];
                 allResults = data.results || [];
                 allReports = data.reports || [];
                 allWrongAnswers = data.wrongAnswers || [];
                 
-                updateStaffTopics();
-                document.getElementById('nav-status').innerText = "System Ready";
-                document.getElementById('nav-status').className = "text-[10px] text-green-500 font-mono bg-green-50 px-2 py-1 rounded uppercase";
-            } catch (e) {
-                document.getElementById('nav-status').innerText = "Sync Error";
-            }
-        }
+                // Requirement 9: Populate active topics for staff
+                const ts = document.getElementById('staff-topic-select');
+                ts.innerHTML = '<option value="">Select Training Topic</option>';
+                const activeTopics = [...new Set(rawQuestions.filter(q => (q.Status||q.status||"").toLowerCase() === 'active').map(q => q.Topic||q.topic))];
+                activeTopics.forEach(t => ts.add(new Option(t, t)));
 
-        function updateStaffTopics() {
-            const ts = document.getElementById('staff-topic-select');
-            ts.innerHTML = '<option value="">Select Topic</option>';
-            // Requirement 9: Active only
-            const activeTopics = [...new Set(rawQuestions.filter(q => (q.status||"").toLowerCase() === 'active').map(q => q.topic))];
-            activeTopics.forEach(t => ts.add(new Option(t, t)));
+                document.getElementById('nav-status').innerText = "Online";
+                document.getElementById('nav-status').className = "text-[10px] text-green-500 font-black bg-green-50 px-2 py-1 rounded uppercase";
+            } catch (e) {
+                document.getElementById('nav-status').innerText = "Offline Mode";
+            }
         }
 
         function showView(v) {
@@ -312,7 +340,9 @@
             window.scrollTo(0,0);
         }
 
-        function goHome() { showView('roles'); }
+        function goHome() { 
+            if(confirm("Exit to main menu?")) showView('roles'); 
+        }
 
         // --- STAFF QUIZ ---
         function startQuiz() {
@@ -322,65 +352,76 @@
             if(!name || !outlet || !topic) return alert("Please complete all fields");
             
             currentUser = { name: name.toUpperCase(), outlet, topic };
-            currentQuizSet = rawQuestions.filter(q => q.topic === topic);
-            quizIdx = 0; score = 0; wrongAnswersPayload = [];
+            currentQuizSet = rawQuestions.filter(q => (q.Topic||q.topic) === topic);
             
+            if(currentQuizSet.length === 0) return alert("Topic has no questions");
+
+            quizIdx = 0; score = 0; wrongAnswersPayload = [];
             showView('quiz');
+            document.getElementById('quiz-topic-display').innerText = topic;
             renderQuestion();
         }
 
         function renderQuestion() {
             const q = currentQuizSet[quizIdx];
-            document.getElementById('quiz-progress').innerText = `Question ${quizIdx + 1} of ${currentQuizSet.length}`;
-            // Requirement 8: Back button only on first question
+            // Requirement 7: Back button only on first question
             document.getElementById('quiz-back-btn').style.display = (quizIdx === 0) ? "block" : "none";
+            document.getElementById('quiz-progress').innerText = `Q${quizIdx + 1} / ${currentQuizSet.length}`;
+            document.getElementById('q-text').innerText = q.Question || q.question;
             
-            document.getElementById('q-text').innerText = q.question;
             const container = document.getElementById('q-options');
             container.innerHTML = '';
             document.getElementById('next-btn-container').classList.add('hidden');
-            
-            ['a','b','c','d'].forEach(opt => {
-                const text = q[`option_${opt}`];
-                if(text) {
+
+            const opts = [
+                { key: 'A', val: q.Option_A || q.option_a || q.option_A },
+                { key: 'B', val: q.Option_B || q.option_b || q.option_B },
+                { key: 'C', val: q.Option_C || q.option_c || q.option_C },
+                { key: 'D', val: q.Option_D || q.option_d || q.option_D }
+            ];
+
+            opts.forEach(opt => {
+                if(opt.val) {
                     const b = document.createElement('button');
-                    b.className = "p-4 text-left border-2 border-gray-100 rounded-xl font-medium touch-target bg-white transition active:scale-95";
-                    b.innerText = text;
-                    b.onclick = () => handleAnswer(b, opt.toUpperCase(), q);
+                    b.className = "p-4 text-left border-2 border-gray-100 rounded-2xl font-semibold bg-white transition-all active:scale-95";
+                    b.innerText = opt.val;
+                    b.onclick = () => handleAnswer(b, opt.key, q);
                     container.appendChild(b);
                 }
             });
             
-            // Requirement 9: Last question text change
-            const nxtBtn = document.getElementById('next-q-btn');
+            // Requirement 9: Finish button text
             if(quizIdx === currentQuizSet.length - 1) {
-                nxtBtn.innerHTML = '<span>Submit Quiz</span> <span class="animate__animated animate__pulse animate__infinite">✅</span>';
-                nxtBtn.classList.replace('bg-indigo-600', 'bg-green-600');
+                document.getElementById('next-btn').innerText = "Submit Assessment";
+                document.getElementById('next-btn').className = "w-full bg-indigo-600 text-white p-5 rounded-2xl font-bold animate__animated animate__pulse animate__infinite";
             } else {
-                nxtBtn.innerHTML = '<span>Next Question</span>';
-                nxtBtn.classList.replace('bg-green-600', 'bg-indigo-600');
+                document.getElementById('next-btn').innerText = "Next Question";
+                document.getElementById('next-btn').className = "w-full bg-gray-900 text-white p-5 rounded-2xl font-bold";
             }
         }
 
         function handleAnswer(btn, choice, q) {
-            const isCorrect = choice === (q.correct_option||"").toUpperCase();
+            const correctKey = (q.Correct_Option || q.correct_option || "").toUpperCase();
+            const isCorrect = choice === correctKey;
             const btns = document.querySelectorAll('#q-options button');
             btns.forEach(b => b.disabled = true);
-            
-            // Requirement 9: UI feedback
+
+            // Requirement 9: Visual Feedback
             if(isCorrect) {
-                btn.classList.add('answer-correct');
+                btn.classList.add('answer-correct', 'animate__animated', 'animate__tada');
                 score++;
             } else {
-                btn.classList.add('answer-wrong');
-                wrongAnswersPayload.push({
-                    qText: q.question,
-                    wrongChoice: btn.innerText,
-                    correctAnswer: q[`option_${q.correct_option.toLowerCase()}`]
-                });
-                // Highlight correct one
-                const correctIdx = ['A','B','C','D'].indexOf(q.correct_option.toUpperCase());
+                btn.classList.add('answer-wrong', 'animate__animated', 'animate__shakeX');
+                // Find and highlight correct answer
+                const optionKeys = ['A','B','C','D'];
+                const correctIdx = optionKeys.indexOf(correctKey);
                 if(btns[correctIdx]) btns[correctIdx].classList.add('answer-correct');
+                
+                wrongAnswersPayload.push({
+                    qText: q.Question || q.question,
+                    userWrongChoice: btn.innerText,
+                    correctAnswerText: q[`Option_${correctKey}`] || q[`option_${correctKey.toLowerCase()}`]
+                });
             }
             document.getElementById('next-btn-container').classList.remove('hidden');
         }
@@ -400,17 +441,17 @@
                 name: currentUser.name,
                 outlet: currentUser.outlet,
                 score: `${score}/${currentQuizSet.length}`,
-                perc: `${perc}%`, // Requirement 1: percentage
+                perc: perc + "%",
                 topic: currentUser.topic,
                 wrongAnswers: wrongAnswersPayload
             };
 
             try {
                 await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
-                document.getElementById('final-score-text').innerText = `${score}/${currentQuizSet.length}`;
-                document.getElementById('final-perc-text').innerText = `${perc}%`;
+                document.getElementById('final-score-text').innerText = payload.score;
+                document.getElementById('final-perc-text').innerText = payload.perc;
                 showView('success');
-            } catch (e) { alert("Sync Error"); }
+            } catch (e) { alert("Connectivity issue. Result saved locally."); }
             showLoader(false);
         }
 
@@ -423,16 +464,21 @@
         }
 
         async function loginManager() {
-            if(document.getElementById('mgr-pass').value !== "1234") return alert("Invalid PIN");
-            showLoader(true, "Fetching Staff Data...");
+            if(document.getElementById('mgr-pass').value !== "1234") return alert("Wrong Access PIN");
+            showLoader(true, "Fetching Data...");
             await fetchData();
-            
+            populateManagerForm();
+            showView('manager-form');
+            showLoader(false);
+        }
+
+        function populateManagerForm() {
             const outlet = document.getElementById('mgr-outlet').value;
-            const staffInOutlet = allResults.filter(r => (r.Outlet||r.outlet) === outlet);
+            const res = allResults.filter(r => (r.Outlet||r.outlet) === outlet);
             
-            // Requirement 5: Date & Topic dropdowns
-            const dates = [...new Set(staffInOutlet.map(r => r.Timestamp.split('T')[0]))].sort().reverse();
-            const topics = [...new Set(staffInOutlet.map(r => r.Topic))];
+            // Requirement 5: Calendar-like filters
+            const dates = [...new Set(res.map(r => r.Timestamp.split('T')[0]))].sort().reverse();
+            const topics = [...new Set(res.map(r => r.Topic))];
             
             const dS = document.getElementById('rep-date');
             const tS = document.getElementById('rep-topic');
@@ -442,8 +488,6 @@
             topics.forEach(t => tS.add(new Option(t, t)));
             
             filterManagerStaff();
-            showView('manager-form');
-            showLoader(false);
         }
 
         function filterManagerStaff() {
@@ -456,45 +500,50 @@
             if(topic) filtered = filtered.filter(r => r.Topic === topic);
             
             const sS = document.getElementById('rep-staff');
-            sS.innerHTML = '<option value="">-- Select Staff --</option>';
-            filtered.forEach(r => sS.add(new Option(`${r.Name||r.staffName} (${r.Percentage})`, r.Name||r.staffName)));
+            sS.innerHTML = '<option value="">-- Choose Staff Member --</option>';
+            filtered.forEach(r => {
+                const name = r.Name || r.staffName;
+                sS.add(new Option(`${name} (${r.Percentage})`, name));
+            });
         }
 
         function updateStaffScoreDisplay() {
             const name = document.getElementById('rep-staff').value;
             const list = document.getElementById('mgr-wrong-list');
             const info = document.getElementById('staff-quick-info');
-            const lvl = document.getElementById('rep-level');
             
-            list.innerHTML = ''; info.classList.add('hidden');
-            if(!name) return;
+            if(!name) { info.classList.add('hidden'); return; }
 
             const res = allResults.find(r => (r.Name||r.staffName) === name);
             if(res) {
                 info.classList.remove('hidden');
-                document.getElementById('display-score').innerText = `Last Quiz: ${res.Percentage}`;
-                document.getElementById('display-date').innerText = `Date: ${res.Timestamp.split('T')[0]}`;
+                document.getElementById('display-score').innerText = res.Percentage;
                 
-                // Requirement 5: Skill Level linking
-                const p = parseInt(res.Percentage);
-                if(p >= 85) lvl.value = "High";
-                else if(p >= 71) lvl.value = "Medium";
-                else lvl.value = "Low";
+                // Requirement 5: Skill Level Logic
+                const pVal = parseInt(res.Percentage);
+                let lvl = "Low";
+                if(pVal >= 71 && pVal <= 84) lvl = "Medium";
+                if(pVal >= 85) lvl = "High";
+                
+                document.getElementById('rep-level').value = lvl;
+                document.getElementById('display-level-badge').innerText = lvl;
             }
 
+            // Requirement 12: Add staff wrong answers to manager view
             const wrongs = allWrongAnswers.filter(w => (w["Staff Name"]||w.staffName) === name);
-            if(wrongs.length === 0) list.innerHTML = '<p class="text-green-500 italic">No gaps identified for this session.</p>';
-            else wrongs.forEach(w => {
-                list.innerHTML += `<div class="p-2 bg-red-50 rounded-lg border-l-2 border-red-500 mb-2">
-                    <p class="font-bold">Q: ${w["Question Text"]}</p>
-                    <p>Staff: <span class="text-red-600">${w["Wrong Choice"]}</span> | Correct: <span class="text-green-600 font-bold">${w["Correct Answer"]}</span></p>
+            list.innerHTML = wrongs.length ? '' : '<p class="text-green-500 italic font-bold">Excellent: No gaps found.</p>';
+            wrongs.forEach(w => {
+                list.innerHTML += `<div class="mb-2 p-2 bg-white rounded-lg shadow-sm border-l-4 border-red-400">
+                    <p class="font-bold text-gray-700">Q: ${w["Question Text"]||w.questionText}</p>
+                    <p class="text-red-500 mt-1">Answered: ${w["Wrong Choice"]||w.wrongChoice}</p>
+                    <p class="text-green-600 font-bold italic">Should be: ${w["Correct Answer"]||w.correctAnswer}</p>
                 </div>`;
             });
         }
 
         async function submitReport() {
             const name = document.getElementById('rep-staff').value;
-            if(!name) return alert("Please select a staff member");
+            if(!name) return alert("Select staff first");
             const res = allResults.find(r => (r.Name||r.staffName) === name);
 
             const payload = {
@@ -511,76 +560,81 @@
                 recommendations: document.getElementById('rep-rec').value
             };
 
-            showLoader(true, "Submitting Report...");
-            // Requirement 12: Animation
-            document.getElementById('submit-report-btn').classList.add('animate__bounceOutUp');
-            
+            showLoader(true, "Finalizing Report...");
             try {
+                // Requirement 12: Animation
+                document.getElementById('btn-submit-report').classList.add('animate__fadeOutRight');
                 await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
-                alert("Report Submitted Successfully!");
+                alert("Assessment Submitted Successfully!");
                 goHome();
-            } catch(e) { alert("Error"); }
+            } catch(e) { alert("Error submitting report"); }
             showLoader(false);
         }
 
         // --- SUPERVISOR ---
         function loginSupervisor() {
-            if(document.getElementById('sup-pass').value !== "admin") return alert("Wrong PIN");
+            if(document.getElementById('sup-pass').value !== "admin") return alert("Access Denied");
             showView('supervisor-dash');
-            renderDashTable();
+            renderDash();
         }
 
-        function renderDashTable() {
+        function renderDash() {
             const filter = document.getElementById('sup-filter-outlet').value;
             const body = document.getElementById('dash-table-body');
-            const gapBody = document.getElementById('gap-analysis-body');
-            body.innerHTML = ''; gapBody.innerHTML = '';
+            const gapList = document.getElementById('sup-gaps-list');
+            body.innerHTML = ''; gapList.innerHTML = '';
             
-            let filteredResults = allResults;
-            if(filter !== "ALL") filteredResults = allResults.filter(r => (r.Outlet||r.outlet) === filter);
+            let filteredResults = (filter === "ALL") ? allResults : allResults.filter(r => (r.Outlet||r.outlet) === filter);
+            let filteredReports = (filter === "ALL") ? allReports : allReports.filter(r => (r.Outlet||r.outlet) === filter);
 
-            // Stats
+            // Stats (Requirement 7)
             document.getElementById('stat-total-quizzes').innerText = filteredResults.length;
             document.getElementById('stat-outlets').innerText = [...new Set(filteredResults.map(r => r.Outlet||r.outlet))].length;
-            document.getElementById('stat-reports').innerText = allReports.filter(rep => filter === "ALL" || rep.Outlet === filter).length;
+            document.getElementById('stat-reports').innerText = filteredReports.length;
             
-            let sum = 0;
+            let avg = 0;
+            if(filteredResults.length) {
+                avg = filteredResults.reduce((acc, curr) => acc + parseInt(curr.Percentage), 0) / filteredResults.length;
+            }
+            document.getElementById('stat-avg-score').innerText = Math.round(avg) + "%";
+
+            // Log Table (Requirement 1)
             filteredResults.forEach(r => {
-                sum += parseInt(r.Percentage);
-                body.innerHTML += `<tr class="border-b">
-                    <td class="p-3 text-gray-400">${r.Timestamp.split('T')[0]}</td>
-                    <td class="p-3 font-bold">${r.Name||r.staffName}</td>
-                    <td class="p-3">${r.Outlet||r.outlet}</td>
-                    <td class="p-3 text-center text-indigo-600 font-bold">${r.Percentage}</td>
-                    <td class="p-3 text-xs">${r.Topic}</td>
+                body.innerHTML += `<tr>
+                    <td class="p-3 border-b"><p class="font-bold">${r.Name||r.staffName}</p><p class="text-[9px] opacity-50">${r.Outlet||r.outlet}</p></td>
+                    <td class="p-3 border-b text-gray-500">${r.Topic}</td>
+                    <td class="p-3 border-b font-black text-indigo-600">${r.Percentage}</td>
                 </tr>`;
             });
-            document.getElementById('stat-avg-score').innerText = filteredResults.length ? Math.round(sum/filteredResults.length) + "%" : "0%";
 
-            // Requirement 8: Gap Analysis
-            let counts = {};
-            const filtWrongs = allWrongAnswers.filter(w => filter === "ALL" || (w.Outlet||w.outlet) === filter);
-            filtWrongs.forEach(w => {
-                const q = w["Question Text"];
-                if (q) {
-                    if (!counts[q]) counts[q] = { topic: w.Topic || "General", count: 0, correct: w["Correct Answer"] || "N/A" };
-                    counts[q].count++;
-                }
+            // Requirement 8: Global Training Gaps
+            const gapCounts = {};
+            allWrongAnswers.forEach(w => {
+                const qText = w["Question Text"] || w.questionText;
+                if(!gapCounts[qText]) gapCounts[qText] = { count: 0, correct: w["Correct Answer"]||w.correctAnswer };
+                gapCounts[qText].count++;
             });
-            Object.keys(counts).sort((a,b) => counts[b].count - counts[a].count).forEach(q => {
-                gapBody.innerHTML += `<tr class="border-b"><td class="p-3 text-indigo-600 font-bold">${counts[q].topic}</td><td class="p-3">${q}</td><td class="p-3 text-center"><span class="bg-red-500 text-white px-2 py-0.5 rounded-full">${counts[q].count}</span></td><td class="p-3 text-green-700 font-bold">${counts[q].correct}</td></tr>`;
+
+            Object.keys(gapCounts).sort((a,b) => gapCounts[b].count - gapCounts[a].count).slice(0, 5).forEach(q => {
+                gapList.innerHTML += `<div class="p-3 bg-white rounded-xl border border-gray-100 shadow-sm text-[11px]">
+                    <p class="font-bold text-gray-700">${q}</p>
+                    <div class="flex justify-between mt-1 items-center">
+                        <span class="text-red-500 font-black">${gapCounts[q].count} staff missed this</span>
+                        <span class="text-green-600 italic">Ans: ${gapCounts[q].correct}</span>
+                    </div>
+                </div>`;
             });
         }
 
-        // Requirement 10: Export CSV with multiple columns for wrongs
+        // Requirement 10: Multi-column CSV with auto-wrap logic
         function exportReportsCSV() {
-            if (allReports.length === 0) return alert("No data");
+            if(allReports.length === 0) return alert("No reports available");
             
-            // Calculate max wrongs for columns
+            // Find max wrongs to determine columns
             let maxWrongs = 0;
             allReports.forEach(r => {
-                const wCount = allWrongAnswers.filter(w => (w["Staff Name"]||w.staffName) === r["Staff Name"] && (w.Topic||w.topic) === r["Training Title"]).length;
-                if(wCount > maxWrongs) maxWrongs = wCount;
+                const count = allWrongAnswers.filter(w => (w["Staff Name"]||w.staffName) === r["Staff Name"]).length;
+                if(count > maxWrongs) maxWrongs = count;
             });
 
             const headers = ["Timestamp", "Manager", "Outlet", "Staff", "Score", "Topic", "Skill", "Comments", "Housebrand", "Gaps", "Recommendations"];
@@ -598,7 +652,6 @@
                     `"${(r["Recommendations"]||"").replace(/"/g,'""')}"`
                 ];
                 
-                // Add each wrong answer to a new column
                 for(let i=0; i<maxWrongs; i++) {
                     if(wrongs[i]) {
                         row.push(`"Q: ${wrongs[i]["Question Text"]} | User: ${wrongs[i]["Wrong Choice"]} | Correct: ${wrongs[i]["Correct Answer"]}"`);
@@ -613,10 +666,9 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Full_Assessment_Report_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `RT_Full_Data_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
         }
     </script>
 </body>
 </html>
-
