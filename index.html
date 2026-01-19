@@ -407,30 +407,78 @@
 
         // Fix 1: Correct Wide-format Export logic
         function exportWideData() {
-            let csv = "Timestamp,Staff_Name,Outlet,Topic,Manager,Report_Date,Score,Comments,Housebrand_Focus,Gaps,Recommendations";
-            let maxErr = 0;
-            allReports.forEach(rep => {
-                const errCount = allWrongAnswers.filter(w => w["Staff Name"] === rep["Staff Name"] && w.Topic === rep["Training Title"]).length;
-                if(errCount > maxErr) maxErr = errCount;
-            });
-            for(let i=1; i<=maxErr; i++) csv += `,Mistake_${i}_Question,Mistake_${i}_Answer`;
-            csv += "\n";
+    if (allReports.length === 0) return alert("No reports found to export.");
 
-            allReports.forEach(rep => {
-                const errs = allWrongAnswers.filter(w => w["Staff Name"] === rep["Staff Name"] && w.Topic === rep["Training Title"]);
-                let row = `"${rep.Timestamp}","${rep["Staff Name"]}","${rep.Outlet}","${rep["Training Title"]}","${rep.Manager}","${rep["Training Date"]}","${rep["Quiz Score"]}","${rep["Competency Comments"].replace(/"/g,'""')}","${rep["Housebrand Focus"].replace(/"/g,'""')}","${rep["Performance Gaps"].replace(/"/g,'""')}","${rep.Recommendations.replace(/"/g,'""')}"`;
-                errs.forEach(e => {
-                    row += `,"${e["Question Text"].replace(/"/g,'""')}","${e["User Choice"].replace(/"/g,'""')} (Correct: ${e["Correct Answer"].replace(/"/g,'""')})"`;
-                });
-                for(let i = errs.length; i < maxErr; i++) row += `,"",""`;
-                csv += row + "\n";
-            });
+    // 1. Define Standard Headers from the Reports Tab
+    let csv = "Timestamp,Staff_Name,Outlet,Topic,Manager,Report_Date,Quiz_Score,Skill_Level,Comments,Housebrand_Focus,Performance_Gaps,Recommendations";
+    
+    // 2. Determine the maximum number of mistakes any single staff made
+    // This ensures we have enough columns for everyone
+    let maxErrCount = 0;
+    allReports.forEach(rep => {
+        const staffMistakes = allWrongAnswers.filter(w => 
+            (w["Staff Name"] === rep["Staff Name"]) && 
+            (w["Topic"] === rep["Training Title"])
+        );
+        if (staffMistakes.length > maxErrCount) maxErrCount = staffMistakes.length;
+    });
+    
+    // 3. Add dynamic columns for Wrong Answers
+    for (let i = 1; i <= maxErrCount; i++) {
+        csv += `,Mistake_${i}_Question,Mistake_${i}_Staff_Choice,Mistake_${i}_Correct_Answer`;
+    }
+    csv += "\n";
 
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'RT_Comprehensive_Reports.csv'; a.click();
+    // 4. Fill Data Rows
+    allReports.forEach(rep => {
+        // Link the WrongAnswers data to this specific report
+        const errors = allWrongAnswers.filter(w => 
+            (w["Staff Name"] === rep["Staff Name"]) && 
+            (w["Topic"] === rep["Training Title"])
+        );
+
+        // Sanitize text: replace double quotes with single and wrap in double quotes to prevent splitting
+        const clean = (text) => `"${(text || "").toString().replace(/"/g, "'")}"`;
+
+        let row = [
+            clean(rep.Timestamp),
+            clean(rep["Staff Name"]),
+            clean(rep.Outlet),
+            clean(rep["Training Title"]),
+            clean(rep.Manager),
+            clean(rep["Training Date"]),
+            clean(rep["Quiz Score"]),
+            clean(rep["Skill Level"]),
+            clean(rep["Competency Comments"]),
+            clean(rep["Housebrand Focus"]),
+            clean(rep["Performance Gaps"]),
+            clean(rep.Recommendations)
+        ].join(",");
+
+        // Append errors side-by-side
+        errors.forEach(e => {
+            row += `,${clean(e["Question Text"])},${clean(e["User Choice"])},${clean(e["Correct Answer"])}`;
+        });
+
+        // Fill empty columns for staff with fewer errors to keep the rows even
+        for (let i = errors.length; i < maxErrCount; i++) {
+            row += `,,,`;
         }
+        csv += row + "\n";
+    });
+
+    // 5. Trigger Download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `RT_PRO_Full_Report_${new Date().toLocaleDateString()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
     </script>
 </body>
 </html>
+
