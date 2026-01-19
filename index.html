@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RT Pro | RetailTraining</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
@@ -22,12 +27,14 @@
 
     <div id="loader-overlay" class="hidden fixed inset-0 bg-white/80 z-50 flex flex-col items-center justify-center">
         <div class="spinner mb-4"></div>
-        <p id="loader-text" class="font-bold text-indigo-700">Syncing...</p>
+        <p id="loader-text" class="font-bold text-indigo-700">Syncing Data...</p>
     </div>
 
     <nav class="bg-white shadow-sm p-4 sticky top-0 z-40 border-b">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="font-bold text-lg text-indigo-700">RT Pro</h1>
+            <h1 class="font-bold text-lg text-indigo-700 flex items-center gap-2">
+                <span>RT Pro</span>
+            </h1>
             <div id="nav-status" class="text-[10px] text-gray-400 font-mono uppercase">Syncing...</div>
         </div>
     </nav>
@@ -45,18 +52,18 @@
             </div>
             <div onclick="showView('supervisor-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 active:bg-gray-50 cursor-pointer">
                 <span class="text-3xl">⭐</span>
-                <div><h2 class="font-bold text-gray-800">Supervisor</h2><p class="text-xs text-gray-500">Data Dashboard</p></div>
+                <div><h2 class="font-bold text-gray-800">Supervisor</h2><p class="text-xs text-gray-500">Master Dashboard</p></div>
             </div>
         </div>
 
         <div id="view-staff-login" class="hidden glass p-6 rounded-2xl space-y-4 shadow-xl">
-            <h2 class="text-xl font-bold text-center">Staff Quiz</h2>
-            <input type="text" id="staff-name" class="p-3 border rounded-lg w-full" placeholder="Enter Full Name">
+            <h2 class="text-xl font-bold text-center text-indigo-700">Staff Portal</h2>
+            <input type="text" id="staff-name" class="p-3 border rounded-lg w-full" placeholder="Full Name">
             <select id="staff-outlet" class="p-3 border rounded-lg w-full"></select>
             <select id="staff-topic-select" class="p-3 border rounded-lg w-full font-bold text-indigo-600">
-                <option value="">Select Topic</option>
+                <option value="">Select Training Topic</option>
             </select>
-            <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold">Start Now</button>
+            <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold">Launch Quiz</button>
             <button onclick="goHome()" class="w-full text-gray-400 text-sm">Back</button>
         </div>
 
@@ -68,98 +75,77 @@
             <h3 id="q-text" class="text-lg font-bold text-gray-800 py-4"></h3>
             <div id="q-options" class="grid grid-cols-1 gap-3"></div>
             <div id="next-btn-container" class="hidden pt-4">
-                <button id="next-q-btn" onclick="nextQuestion()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">Next</button>
-            </div>
-        </div>
-
-        <div id="view-manager-login" class="hidden glass p-6 rounded-2xl space-y-4">
-             <h2 class="text-xl font-bold text-center">Manager Login</h2>
-             <select id="mgr-select" onchange="updateMgrOutlets()" class="p-3 border rounded-lg w-full"></select>
-             <select id="mgr-outlet" class="p-3 border rounded-lg w-full"></select>
-             <input type="password" id="mgr-pass" class="p-3 border rounded-lg w-full" placeholder="Password">
-             <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-xl font-bold">Access Assessments</button>
-             <button onclick="goHome()" class="w-full text-gray-400 text-sm">Back</button>
-        </div>
-
-        <div id="view-manager-form" class="hidden space-y-4">
-            <div class="glass p-6 rounded-2xl shadow-lg space-y-4">
-                <h2 class="font-bold text-indigo-700">Submit Assessment</h2>
-                <div class="grid grid-cols-1 gap-2">
-                    <select id="rep-topic-dropdown" class="p-3 border rounded bg-gray-50 font-bold" onchange="filterManagerStaff()"></select>
-                    <select id="rep-staff" class="p-3 border rounded-lg font-bold" onchange="updateStaffScoreDisplay()">
-                        <option value="">-- Select Staff Member --</option>
-                    </select>
-                </div>
-                <div id="staff-quick-info" class="hidden p-3 bg-indigo-50 rounded-lg text-sm flex justify-between italic">
-                    <span id="display-score">Score: -</span>
-                    <span id="display-date">Date: -</span>
-                </div>
-                <select id="rep-level" class="p-3 border rounded-lg bg-gray-100" disabled>
-                    <option value="Low">Low (0-70%)</option>
-                    <option value="Medium">Medium (71-84%)</option>
-                    <option value="High">High (85-100%)</option>
-                </select>
-                <textarea id="rep-comments" class="p-3 border rounded-lg h-20 w-full" placeholder="Competency Comments"></textarea>
-                <textarea id="rep-housebrand" class="p-3 border rounded-lg h-20 w-full" placeholder="Housebrand Focus Point"></textarea>
-                <textarea id="rep-gaps" class="p-3 border rounded-lg h-20 w-full" placeholder="Performance Gaps"></textarea>
-                <textarea id="rep-rec" class="p-3 border rounded-lg h-20 w-full" placeholder="Recommendations"></textarea>
-                <button onclick="submitReport()" class="w-full btn-grad p-4 rounded-xl font-bold">Submit Report</button>
-                <button onclick="goHome()" class="w-full text-gray-400 text-sm">Back</button>
-            </div>
-            <div id="mgr-wrong-section" class="glass p-6 rounded-2xl shadow-lg hidden">
-                <h3 class="font-bold text-xs text-red-500 mb-3 uppercase">Staff Wrong Answer Details</h3>
-                <div id="mgr-wrong-list" class="space-y-2 text-xs"></div>
+                <button id="next-q-btn" onclick="nextQuestion()" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">Next Question</button>
             </div>
         </div>
 
         <div id="view-supervisor-login" class="hidden glass p-6 rounded-2xl max-w-sm mx-auto space-y-4">
-            <h2 class="text-xl font-bold text-center">Supervisor Admin</h2>
+            <h2 class="text-xl font-bold text-center">Admin Security</h2>
             <input type="password" id="sup-pass" class="p-3 border rounded-lg w-full" placeholder="Admin PIN">
-            <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">Dashboard</button>
+            <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">Unlock Dashboard</button>
             <button onclick="goHome()" class="w-full text-gray-400 text-sm">Back</button>
         </div>
 
-        <div id="view-supervisor-dash" class="hidden space-y-4 animate__animated animate__fadeIn">
-            <div class="flex justify-between items-center">
-                <h2 class="font-bold text-indigo-700">Supervisor Dashboard</h2>
-                <button onclick="exportReportsCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold">Export Assessment (Expanded Wrongs)</button>
+        <div id="view-supervisor-dash" class="hidden space-y-6 animate__animated animate__fadeIn">
+            <div class="grid grid-cols-3 gap-3">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">Attempts</p>
+                    <p id="dash-total" class="text-xl font-bold text-indigo-600">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">Outlets</p>
+                    <p id="dash-outlets" class="text-xl font-bold text-emerald-600">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">Avg Score</p>
+                    <p id="dash-avg" class="text-xl font-bold text-orange-600">0%</p>
+                </div>
             </div>
-            <div class="glass p-4 rounded-2xl shadow-sm border overflow-x-auto">
-                <table class="w-full text-left text-[10px]">
-                    <thead class="bg-gray-50 border-b">
-                        <tr><th class="p-2">Date</th><th class="p-2">Staff</th><th class="p-2">Outlet</th><th class="p-2">Score</th></tr>
+
+            <div class="flex flex-col md:flex-row gap-3">
+                <input type="text" id="dash-search" oninput="renderSupervisorTable()" placeholder="Search Staff or Outlet..." class="p-3 border rounded-xl flex-grow bg-white">
+                <button onclick="exportReportsCSV()" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold text-sm">Export Assessment CSV</button>
+            </div>
+
+            <div class="glass rounded-2xl shadow-sm border overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b text-[10px] font-bold uppercase text-gray-500">
+                        <tr>
+                            <th class="p-4">Staff Details</th>
+                            <th class="p-4">Topic</th>
+                            <th class="p-4 text-center">Result</th>
+                        </tr>
                     </thead>
-                    <tbody id="dash-table-body"></tbody>
+                    <tbody id="dash-table-body" class="text-sm divide-y"></tbody>
                 </table>
             </div>
-            <button onclick="goHome()" class="w-full text-gray-400 text-sm">Back</button>
+            <button onclick="goHome()" class="w-full text-gray-400 text-sm">Return Home</button>
         </div>
 
         <div id="view-success" class="hidden glass p-8 rounded-2xl text-center space-y-4 animate__animated animate__zoomIn">
-            <div class="text-5xl">✅</div>
-            <h2 class="text-2xl font-bold">Quiz Submitted!</h2>
-            <div class="bg-indigo-50 p-4 rounded-xl">
-                <p id="final-score-text" class="text-3xl font-black text-indigo-700">0/0</p>
-                <p id="final-perc-text" class="text-sm font-bold text-indigo-500">0%</p>
+            <div class="text-5xl">🎯</div>
+            <h2 class="text-2xl font-bold">Quiz Complete!</h2>
+            <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                <p id="final-score-text" class="text-4xl font-black text-indigo-700">0/0</p>
+                <p id="final-perc-text" class="text-lg font-bold text-indigo-400">0%</p>
             </div>
-            <button onclick="goHome()" class="w-full btn-grad p-4 rounded-xl font-bold">Back Home</button>
+            <button onclick="goHome()" class="w-full btn-grad p-4 rounded-xl font-bold">Finish</button>
+        </div>
+
+        <div id="view-manager-login" class="hidden glass p-6 rounded-2xl space-y-4">
+             <h2 class="text-xl font-bold text-center">Manager Login</h2>
+             <select id="mgr-select" class="p-3 border rounded-lg w-full"></select>
+             <input type="password" id="mgr-pass" class="p-3 border rounded-lg w-full" placeholder="Password">
+             <button onclick="goHome()" class="w-full btn-grad p-4 rounded-xl font-bold">Login</button>
+             <button onclick="goHome()" class="w-full text-gray-400 text-sm">Back</button>
         </div>
 
     </main>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec";
+        // REPLACE WITH YOUR URL
+        const APPS_SCRIPT_URL = "YOUR_DEPLOYED_WEB_APP_URL";
         const outlets = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
-        const managerMapping = {
-            "R1 - AMIRUL": ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"],
-            "R2 - HAZWANI": ["AJ", "BJR", "BP", "HQCT", "KB", "PK", "WM"],
-            "R3 - HARIS": ["B6", "BB", "CDR", "HL", "HQ", "KL"],
-            "R4 - RAIHAN": ["GB", "GBD", "JTH", "RJ", "ST", "TPOH"],
-            "R5 - ADNIN": ["JL", "JLD", "PP", "PSPD", "SMR"],
-            "R6 - NADHIRAH": ["KS", "MC", "MLR", "TM", "TMD", "TMT"],
-            "R7 - HASANUL": ["KBKK", "KBKS", "KBTC", "KBTJ", "PC", "PT"],
-            "R8 - HAFSHAM": ["GM", "PM", "SLS", "TPT", "KKR", "PPK", "CK", "RP"]
-        };
 
         let rawQuestions = [], allResults = [], allReports = [], allWrongAnswers = [];
         let currentUser = {}, currentQuizSet = [], quizIdx = 0, score = 0, wrongAnswersPayload = [];
@@ -181,9 +167,8 @@
                 allReports = data.reports || [];
                 allWrongAnswers = data.wrongAnswers || [];
                 
-                // Fixed: Populate topics from all rawQuestions (Fixes "Questions Undefined")
                 const ts = document.getElementById('staff-topic-select');
-                ts.innerHTML = '<option value="">Select Topic</option>';
+                ts.innerHTML = '<option value="">Select Training Topic</option>';
                 [...new Set(rawQuestions.map(q => q.topic))].forEach(t => ts.add(new Option(t, t)));
                 
                 document.getElementById('nav-status').innerText = "System Ready";
@@ -193,11 +178,8 @@
 
         function populateDropdowns() {
             const sO = document.getElementById('staff-outlet');
-            const mS = document.getElementById('mgr-select');
             sO.add(new Option("Select Outlet", ""));
             outlets.forEach(o => sO.add(new Option(o, o)));
-            mS.add(new Option("Select Manager", ""));
-            Object.keys(managerMapping).forEach(m => mS.add(new Option(m, m)));
         }
 
         function showView(v) {
@@ -211,9 +193,13 @@
             const name = document.getElementById('staff-name').value.trim();
             const outlet = document.getElementById('staff-outlet').value;
             const topic = document.getElementById('staff-topic-select').value;
-            if(!name || !outlet || !topic) return alert("Complete fields");
+            if(!name || !outlet || !topic) return alert("Complete all fields");
+            
             currentUser = { name: name.toUpperCase(), outlet, topic };
             currentQuizSet = rawQuestions.filter(q => q.topic === topic);
+            
+            if(currentQuizSet.length === 0) return alert("No questions found for this topic.");
+            
             quizIdx = 0; score = 0; wrongAnswersPayload = [];
             showView('quiz');
             renderQuestion();
@@ -221,23 +207,34 @@
 
         function renderQuestion() {
             const q = currentQuizSet[quizIdx];
-            document.getElementById('quiz-progress').innerText = `Q${quizIdx + 1}/${currentQuizSet.length}`;
+            document.getElementById('quiz-progress').innerText = `Question ${quizIdx + 1} of ${currentQuizSet.length}`;
+            document.getElementById('quiz-topic-display').innerText = q.topic;
+            
+            // Bridge fix: Use lowercase keys generated by GAS
             document.getElementById('q-text').innerText = q.question;
             const container = document.getElementById('q-options');
             container.innerHTML = '';
             document.getElementById('next-btn-container').classList.add('hidden');
-            ['a','b','c','d'].forEach(opt => {
-                const text = q[`option_${opt}`];
-                if(text) {
+
+            ['a','b','c','d'].forEach(optKey => {
+                const optText = q[`option_${optKey}`];
+                if(optText) {
                     const b = document.createElement('button');
-                    b.className = "p-4 text-left border rounded-xl bg-white";
-                    b.innerText = text;
+                    b.className = "p-4 text-left border rounded-xl bg-white shadow-sm hover:border-indigo-300 transition-all font-medium text-gray-700";
+                    b.innerText = optText;
                     b.onclick = () => {
-                        const isCorrect = opt.toUpperCase() === q.correct_option.toUpperCase();
-                        if(isCorrect) { score++; b.classList.add('answer-correct'); }
-                        else { 
+                        const isCorrect = optKey.toUpperCase() === q.correct_option.toUpperCase();
+                        if(isCorrect) { 
+                            score++; 
+                            b.classList.add('answer-correct'); 
+                        } else { 
                             b.classList.add('answer-wrong');
-                            wrongAnswersPayload.push({ qId: q.id, qText: q.question, userWrongChoice: text, correctAnswerText: q[`option_${q.correct_option.toLowerCase()}`] });
+                            wrongAnswersPayload.push({ 
+                                qId: q.id, 
+                                qText: q.question, 
+                                userWrongChoice: optText, 
+                                correctAnswerText: q[`option_${q.correct_option.toLowerCase()}`] 
+                            });
                         }
                         document.querySelectorAll('#q-options button').forEach(btn => btn.disabled = true);
                         document.getElementById('next-btn-container').classList.remove('hidden');
@@ -254,104 +251,77 @@
         }
 
         async function finishQuiz() {
-            showLoader(true, "Saving...");
+            showLoader(true, "Uploading Results...");
             const perc = Math.round((score/currentQuizSet.length)*100);
-            const payload = { action: 'save_result', name: currentUser.name, outlet: currentUser.outlet, score: `${score}/${currentQuizSet.length}`, perc: perc+"%", topic: currentUser.topic, wrongAnswers: wrongAnswersPayload };
-            await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
-            document.getElementById('final-score-text').innerText = `${score}/${currentQuizSet.length}`;
-            document.getElementById('final-perc-text').innerText = perc + "%";
-            showLoader(false);
-            showView('success');
-        }
-
-        function updateMgrOutlets() {
-            const m = document.getElementById('mgr-select').value;
-            const o = document.getElementById('mgr-outlet');
-            o.innerHTML = '<option value="">Select Outlet</option>';
-            if(m) managerMapping[m].forEach(item => o.add(new Option(item, item)));
-        }
-
-        async function loginManager() {
-            if(document.getElementById('mgr-pass').value !== "1234") return alert("Wrong PIN");
-            showLoader(true);
-            await fetchData();
-            const tS = document.getElementById('rep-topic-dropdown');
-            tS.innerHTML = '<option value="">-- Filter by Topic --</option>';
-            [...new Set(allResults.map(r => r.Topic))].forEach(t => tS.add(new Option(t, t)));
-            showView('manager-form');
-            showLoader(false);
-        }
-
-        function filterManagerStaff() {
-            const outlet = document.getElementById('mgr-outlet').value;
-            const topic = document.getElementById('rep-topic-dropdown').value;
-            // Fixed connection: Ensure we search result data by both Outlet and Topic
-            let filtered = allResults.filter(r => r.Outlet === outlet && r.Topic === topic);
-            const sS = document.getElementById('rep-staff');
-            sS.innerHTML = '<option value="">-- Select Staff Member --</option>';
-            filtered.forEach(r => sS.add(new Option(`${r.Name} (${r.Percentage})`, r.Name)));
-        }
-
-        function updateStaffScoreDisplay() {
-            const name = document.getElementById('rep-staff').value;
-            const info = document.getElementById('staff-quick-info');
-            const res = allResults.find(r => r.Name === name && r.Topic === document.getElementById('rep-topic-dropdown').value);
-            if(res) {
-                info.classList.remove('hidden');
-                document.getElementById('display-score').innerText = `Score: ${res.Percentage}`;
-                document.getElementById('display-date').innerText = `Date: ${res.Timestamp.split('T')[0]}`;
-                const p = parseInt(res.Percentage);
-                const lvl = document.getElementById('rep-level');
-                lvl.value = p <= 70 ? "Low" : (p <= 84 ? "Medium" : "High");
-            }
-            const list = document.getElementById('mgr-wrong-list');
-            const section = document.getElementById('mgr-wrong-section');
-            list.innerHTML = ''; section.classList.add('hidden');
-            const wrongs = allWrongAnswers.filter(w => w["Staff Name"] === name && w.Topic === res.Topic);
-            if(wrongs.length > 0) {
-                section.classList.remove('hidden');
-                wrongs.forEach(w => { list.innerHTML += `<div class='p-2 bg-red-50 border-b'><b>Q:</b> ${w["Question Text"]}<br><b>Staff:</b> ${w["Wrong Choice"]} | <b>Correct:</b> ${w["Correct Answer"]}</div>`; });
-            }
-        }
-
-        async function submitReport() {
-            showLoader(true);
-            const name = document.getElementById('rep-staff').value;
-            const res = allResults.find(r => r.Name === name && r.Topic === document.getElementById('rep-topic-dropdown').value);
-            const payload = {
-                action: 'save_report', manager: document.getElementById('mgr-select').value, outlet: document.getElementById('mgr-outlet').value,
-                staffName: name, quizScore: res.Percentage, trainingTitle: res.Topic, skillLevel: document.getElementById('rep-level').value,
-                competencyComments: document.getElementById('rep-comments').value, housebrandFocus: document.getElementById('rep-housebrand').value,
-                performanceGaps: document.getElementById('rep-gaps').value, recommendations: document.getElementById('rep-rec').value
+            const payload = { 
+                action: 'save_result', 
+                name: currentUser.name, 
+                outlet: currentUser.outlet, 
+                score: `${score}/${currentQuizSet.length}`, 
+                perc: perc+"%", 
+                topic: currentUser.topic, 
+                wrongAnswers: wrongAnswersPayload 
             };
-            await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
-            showLoader(false);
-            alert("Submitted");
-            goHome();
+            
+            try {
+                await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
+                document.getElementById('final-score-text').innerText = `${score}/${currentQuizSet.length}`;
+                document.getElementById('final-perc-text').innerText = perc + "%";
+                showLoader(false);
+                showView('success');
+            } catch(e) {
+                alert("Upload failed. Check connection.");
+                showLoader(false);
+            }
         }
 
         function loginSupervisor() {
-            if(document.getElementById('sup-pass').value !== "admin") return alert("Denied");
+            if(document.getElementById('sup-pass').value !== "admin") return alert("Access Denied");
             showView('supervisor-dash');
+            renderSupervisorTable();
+        }
+
+        function renderSupervisorTable() {
+            const query = document.getElementById('dash-search').value.toLowerCase();
+            const filtered = allResults.filter(r => 
+                r.Name.toLowerCase().includes(query) || 
+                r.Outlet.toLowerCase().includes(query)
+            );
+
+            // Update Stats
+            document.getElementById('dash-total').innerText = filtered.length;
+            document.getElementById('dash-outlets').innerText = [...new Set(filtered.map(r => r.Outlet))].length;
+            const avg = filtered.length ? Math.round(filtered.reduce((a,b) => a + parseInt(b.Percentage), 0) / filtered.length) : 0;
+            document.getElementById('dash-avg').innerText = avg + "%";
+
             const body = document.getElementById('dash-table-body');
             body.innerHTML = '';
-            allResults.forEach(r => {
-                body.innerHTML += `<tr class="border-b"><td class="p-2">${r.Timestamp.split('T')[0]}</td><td class="p-2">${r.Name}</td><td class="p-2">${r.Outlet}</td><td class="p-2 text-indigo-600">${r.Percentage}</td></tr>`;
+            filtered.reverse().forEach(r => {
+                const colorClass = parseInt(r.Percentage) >= 70 ? 'text-emerald-600' : 'text-red-600';
+                body.innerHTML += `
+                    <tr>
+                        <td class="p-4">
+                            <div class="font-bold text-gray-800">${r.Name}</div>
+                            <div class="text-[10px] text-gray-400 uppercase tracking-tighter">${r.Outlet} • ${new Date(r.Timestamp).toLocaleDateString()}</div>
+                        </td>
+                        <td class="p-4 text-xs font-medium text-gray-500">${r.Topic}</td>
+                        <td class="p-4 text-center font-black ${colorClass}">${r.Percentage}</td>
+                    </tr>
+                `;
             });
         }
 
         function exportReportsCSV() {
-            if(allReports.length === 0) return alert("No data");
+            if(allReports.length === 0) return alert("No assessment data to export");
             
-            // Determine max questions to create dynamic columns
             let maxWrongs = 0;
             allReports.forEach(r => {
                 const count = allWrongAnswers.filter(w => w["Staff Name"] === r["Staff Name"] && w.Topic === r["Training Title"]).length;
                 if(count > maxWrongs) maxWrongs = count;
             });
 
-            const headers = ["Timestamp", "Manager", "Outlet", "Staff", "Score", "Topic", "Skill", "Comments", "Housebrand", "Gaps", "Recommendations"];
-            for(let i=1; i<=maxWrongs; i++) headers.push(`Wrong_Q${i}_Details`);
+            const headers = ["Timestamp", "Manager", "Outlet", "Staff Name", "Quiz Score", "Training Title", "Skill Level", "Comments", "Housebrand", "Gaps", "Recommendations"];
+            for(let i=1; i<=maxWrongs; i++) headers.push(`Wrong_Answer_${i}`);
             
             let csv = headers.join(",") + "\n";
             allReports.forEach(r => {
@@ -363,8 +333,7 @@
                     `"${(r["Performance Gaps"]||"").replace(/"/g,'""')}"`,
                     `"${(r["Recommendations"]||"").replace(/"/g,'""')}"`
                 ];
-                // Added requirement: Each wrong question in a different column
-                wrongs.forEach(w => { row.push(`"Q: ${w["Question Text"]} | Correct: ${w["Correct Answer"]}"`); });
+                wrongs.forEach(w => { row.push(`"Q: ${w["Question Text"]} | User: ${w["Wrong Choice"]} | Correct: ${w["Correct Answer"]}"`); });
                 csv += row.join(",") + "\n";
             });
 
@@ -372,10 +341,9 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = "Assessment_Export.csv";
+            a.download = `Performance_Report_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
         }
     </script>
 </body>
 </html>
-
