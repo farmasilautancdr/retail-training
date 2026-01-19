@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RT Pro | RetailTraining</title>
-    
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RT Pro">
     <meta name="theme-color" content="#4f46e5">
-    
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
@@ -59,18 +57,16 @@
         <div id="view-staff-login" class="hidden animate__animated animate__fadeIn">
             <div class="glass p-8 rounded-3xl shadow-xl">
                 <button onclick="goHome()" class="text-indigo-600 font-bold mb-6 flex items-center">← Back to Dashboard</button>
-                <h2 class="text-2xl font-bold mb-6">Staff Access</h2>
+                <h2 class="text-2xl font-bold mb-6 text-center">Staff Access</h2>
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <button onclick="setLang('en')" id="lang-en" class="p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold">English</button>
                         <button onclick="setLang('ms')" id="lang-ms" class="p-3 rounded-xl border-2 border-slate-200 font-bold">Malay</button>
                     </div>
-                    <input type="text" id="staff-name" placeholder="Enter Full Name" class="w-full p-4 rounded-xl border border-slate-200 outline-none uppercase">
-                    <select id="staff-outlet" class="w-full p-4 rounded-xl border border-slate-200 outline-none">
-                        <option value="">Select Outlet</option>
-                    </select>
-                    <select id="staff-topic" class="w-full p-4 rounded-xl border border-slate-200 outline-none">
-                        <option value="">Select Training Topic</option>
+                    <input type="text" id="staff-name" placeholder="Enter Full Name" class="w-full p-4 rounded-xl border outline-none uppercase bg-white">
+                    <select id="staff-outlet" class="w-full p-4 rounded-xl border bg-white"></select>
+                    <select id="staff-topic" class="w-full p-4 rounded-xl border bg-white font-bold text-indigo-600">
+                        <option value="">Loading Topics...</option>
                     </select>
                     <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold text-lg shadow-lg">START QUIZ</button>
                 </div>
@@ -99,13 +95,9 @@
                 <button onclick="goHome()" class="text-indigo-600 font-bold mb-6">← Back</button>
                 <h2 class="text-2xl font-bold mb-6">Manager Login</h2>
                 <div class="space-y-4">
-                    <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-4 rounded-xl border border-slate-200">
-                        <option value="">Select Manager</option>
-                    </select>
-                    <select id="mgr-outlet" class="w-full p-4 rounded-xl border border-slate-200">
-                        <option value="">Select Outlet</option>
-                    </select>
-                    <input type="password" id="mgr-pass" placeholder="Enter Password" class="w-full p-4 rounded-xl border border-slate-200">
+                    <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-4 rounded-xl border"></select>
+                    <select id="mgr-outlet" class="w-full p-4 rounded-xl border"></select>
+                    <input type="password" id="mgr-pass" placeholder="Enter Password" class="w-full p-4 rounded-xl border">
                     <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-xl font-bold">ACCESS REPORT FORM</button>
                 </div>
             </div>
@@ -117,47 +109,22 @@
                     <h2 class="text-2xl font-bold">Staff Assessment Report</h2>
                     <button onclick="location.reload()" class="bg-slate-100 p-2 rounded-lg font-bold">Logout</button>
                 </div>
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 bg-slate-50 p-6 rounded-2xl">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase">Manager</p>
-                        <p id="disp-mgr-name" class="font-bold text-lg"></p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase">Outlet</p>
-                        <p id="disp-mgr-outlet" class="font-bold text-lg"></p>
-                    </div>
+                    <div><p class="text-xs font-bold text-slate-400 uppercase">Manager</p><p id="disp-mgr-name" class="font-bold text-lg"></p></div>
+                    <div><p class="text-xs font-bold text-slate-400 uppercase">Outlet</p><p id="disp-mgr-outlet" class="font-bold text-lg"></p></div>
                 </div>
 
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-bold mb-2">Select Staff Member</label>
-                            <select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border border-slate-200 outline-none"></select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold mb-2">Training Topic</label>
-                            <select id="rep-topic" class="w-full p-4 rounded-xl border border-slate-200 outline-none"></select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold mb-2">Training Date</label>
-                            <input type="date" id="rep-date" class="w-full p-4 rounded-xl border border-slate-200 outline-none">
-                        </div>
+                        <div><label class="block text-sm font-bold mb-2">Select Staff Member</label><select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border outline-none"></select></div>
+                        <div><label class="block text-sm font-bold mb-2">Training Topic</label><select id="rep-topic" class="w-full p-4 rounded-xl border outline-none"></select></div>
+                        <div><label class="block text-sm font-bold mb-2">Training Date</label><input type="date" id="rep-date" class="w-full p-4 rounded-xl border outline-none"></div>
                     </div>
 
                     <div class="grid grid-cols-3 gap-4 text-center">
-                        <div class="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Raw Score</p>
-                            <p id="disp-staff-score" class="text-xl font-black text-indigo-600">--</p>
-                        </div>
-                        <div class="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Percentage</p>
-                            <p id="disp-staff-perc" class="text-xl font-black text-indigo-600">--</p>
-                        </div>
-                        <div id="disp-staff-level-box" class="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Level</p>
-                            <p id="disp-staff-level" class="text-xl font-black">--</p>
-                        </div>
+                        <div class="p-4 bg-white rounded-xl shadow-sm border"><p class="text-[10px] font-bold text-slate-400 uppercase">Raw Score</p><p id="disp-staff-score" class="text-xl font-black text-indigo-600">--</p></div>
+                        <div class="p-4 bg-white rounded-xl shadow-sm border"><p class="text-[10px] font-bold text-slate-400 uppercase">Percentage</p><p id="disp-staff-perc" class="text-xl font-black text-indigo-600">--</p></div>
+                        <div id="disp-staff-level-box" class="p-4 bg-white rounded-xl shadow-sm border"><p class="text-[10px] font-bold text-slate-400 uppercase">Level</p><p id="disp-staff-level" class="text-xl font-black">--</p></div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -182,50 +149,19 @@
                 <button onclick="goHome()" class="bg-white p-2 px-6 rounded-xl shadow font-bold">← Home</button>
                 <button onclick="exportFullData()" class="bg-indigo-600 text-white p-2 px-6 rounded-xl shadow font-bold">Export CSV</button>
             </div>
-
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div class="glass p-6 rounded-3xl text-center border-b-4 border-blue-500">
-                    <p class="text-xs font-black text-slate-400">TOTAL STAFF</p>
-                    <h3 id="stat-staff" class="text-3xl font-black">0</h3>
-                </div>
-                <div class="glass p-6 rounded-3xl text-center border-b-4 border-green-500">
-                    <p class="text-xs font-black text-slate-400">AVG SCORE</p>
-                    <h3 id="stat-avg" class="text-3xl font-black">0%</h3>
-                </div>
-                <div class="glass p-6 rounded-3xl text-center border-b-4 border-orange-500">
-                    <p class="text-xs font-black text-slate-400">OUTLETS</p>
-                    <h3 id="stat-outlets" class="text-3xl font-black">0</h3>
-                </div>
-                <div class="glass p-6 rounded-3xl text-center border-b-4 border-purple-500">
-                    <p class="text-xs font-black text-slate-400">REPORTS</p>
-                    <h3 id="stat-reports" class="text-3xl font-black">0</h3>
-                </div>
+                <div class="glass p-6 rounded-3xl text-center border-b-4 border-blue-500"><p class="text-xs font-black text-slate-400 uppercase">Total Staff</p><h3 id="stat-staff" class="text-3xl font-black">0</h3></div>
+                <div class="glass p-6 rounded-3xl text-center border-b-4 border-green-500"><p class="text-xs font-black text-slate-400 uppercase">Avg Score</p><h3 id="stat-avg" class="text-3xl font-black">0%</h3></div>
+                <div class="glass p-6 rounded-3xl text-center border-b-4 border-orange-500"><p class="text-xs font-black text-slate-400 uppercase">Outlets</p><h3 id="stat-outlets" class="text-3xl font-black">0</h3></div>
+                <div class="glass p-6 rounded-3xl text-center border-b-4 border-purple-500"><p class="text-xs font-black text-slate-400 uppercase">Reports</p><h3 id="stat-reports" class="text-3xl font-black">0</h3></div>
             </div>
-
             <div class="glass p-6 rounded-3xl shadow-xl">
-                <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
-                    <h3 class="text-xl font-bold">Assessment Log</h3>
-                    <input type="text" id="log-search" onkeyup="filterLog()" placeholder="Search staff name..." class="p-2 border rounded-lg">
-                </div>
-                <div class="overflow-x-auto max-h-[500px]">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 sticky top-0">
-                            <tr><th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3">Score %</th><th class="p-3">Topic</th></tr>
-                        </thead>
-                        <tbody id="table-log"></tbody>
-                    </table>
-                </div>
+                <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold">Assessment Log</h3><input type="text" id="log-search" onkeyup="filterLog()" placeholder="Search staff name..." class="p-2 border rounded-lg outline-none"></div>
+                <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 sticky top-0"><tr><th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3">Score %</th><th class="p-3">Topic</th></tr></thead><tbody id="table-log"></tbody></table></div>
             </div>
         </div>
-        
-        <div id="view-supervisor-login" class="hidden">
-            <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto">
-                <button onclick="goHome()" class="text-indigo-600 font-bold mb-6">← Back</button>
-                <h2 class="text-2xl font-bold mb-6">Supervisor Access</h2>
-                <input type="password" id="sup-pass" placeholder="Enter Admin Password" class="w-full p-4 rounded-xl border border-slate-200 outline-none mb-4">
-                <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">ACCESS DASHBOARD</button>
-            </div>
-        </div>
+
+        <div id="view-supervisor-login" class="hidden"><div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto text-center"><button onclick="goHome()" class="text-indigo-600 font-bold mb-6 flex items-center">← Back</button><h2 class="text-2xl font-bold mb-6">Supervisor Access</h2><input type="password" id="sup-pass" placeholder="Enter Admin Password" class="w-full p-4 rounded-xl border outline-none mb-4"><button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">ACCESS DASHBOARD</button></div></div>
     </div>
 
     <script>
@@ -246,10 +182,7 @@
             { id: "R8 - HAFSHAM", outlets: ["GM", "PM", "SLS", "TPT", "KKR", "PPK", "CK", "RP"] }
         ];
 
-        window.onload = () => {
-            initDropdowns();
-            fetchData();
-        };
+        window.onload = () => { initDropdowns(); fetchData(); };
 
         async function fetchData() {
             toggleLoader(true);
@@ -267,26 +200,23 @@
 
         function initDropdowns() {
             const staffO = document.getElementById('staff-outlet');
+            staffO.innerHTML = '<option value="">Select Outlet</option>';
             outletList.forEach(o => staffO.innerHTML += `<option value="${o}">${o}</option>`);
             const mgrS = document.getElementById('mgr-select');
+            mgrS.innerHTML = '<option value="">Select Manager</option>';
             managerData.forEach(m => mgrS.innerHTML += `<option value="${m.id}">${m.id}</option>`);
         }
 
         function populateManagerAssessData() {
-            // Populate Topics for Staff and Manager Views
-            const topics = [...new Set(allQuestions.map(q => q.topic))];
+            const topics = [...new Set(allQuestions.map(q => q.topic))].filter(t => t);
             const staffTopic = document.getElementById('staff-topic');
             const repTopic = document.getElementById('rep-topic');
-            
             staffTopic.innerHTML = '<option value="">Select Training Topic</option>';
             repTopic.innerHTML = '<option value="">Select Topic</option>';
-            
-            topics.filter(t => t).forEach(t => {
+            topics.forEach(t => {
                 staffTopic.innerHTML += `<option value="${t}">${t}</option>`;
                 repTopic.innerHTML += `<option value="${t}">${t}</option>`;
             });
-
-            // Populate Staff Results for Manager
             const repStaff = document.getElementById('rep-staff');
             repStaff.innerHTML = '<option value="">Select Staff</option>';
             allResults.sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp)).forEach(r => {
@@ -297,7 +227,6 @@
         function formatToPercent(val) {
             let n = parseFloat(val);
             if(isNaN(n)) return "0%";
-            // Fix: handle decimal (0.85) vs whole numbers (85)
             if (n > 0 && n <= 1) return Math.round(n * 100) + "%";
             return Math.round(n) + "%";
         }
@@ -308,23 +237,19 @@
         }
         function goHome() { showView('view-main'); }
         function toggleLoader(s) { document.getElementById('loader').classList.toggle('hidden', !s); }
-
         function setLang(l) {
             currentLang = l;
             document.getElementById('lang-en').className = l === 'en' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
             document.getElementById('lang-ms').className = l === 'ms' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
         }
 
-        // --- QUIZ LOGIC ---
         function startQuiz() {
             const name = document.getElementById('staff-name').value;
             const topic = document.getElementById('staff-topic').value;
             const outlet = document.getElementById('staff-outlet').value;
             if(!name || !topic || !outlet) return alert("Please fill all details");
-            
             currentQuizData = allQuestions.filter(q => q.topic == topic);
             if(currentQuizData.length == 0) return alert("No questions found for this topic");
-            
             quizIdx = 0; score = 0; staffWrongs = [];
             renderQuestion();
             showView('view-quiz');
@@ -335,7 +260,6 @@
             document.getElementById('quiz-back-home').classList.toggle('hidden', quizIdx > 0);
             document.getElementById('quiz-progress').innerText = `Question ${quizIdx+1}/${currentQuizData.length}`;
             document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : q.question_ms;
-            
             const grid = document.getElementById('options-grid');
             grid.innerHTML = '';
             for(let i=1; i<=4; i++) {
@@ -354,19 +278,12 @@
         function handleChoice(idx, btn, q) {
             document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null);
             const isCorrect = idx == q.correct;
-            if(isCorrect) {
-                btn.classList.add('opt-correct');
-                score++;
-            } else {
+            if(isCorrect) { btn.classList.add('opt-correct'); score++; }
+            else {
                 btn.classList.add('opt-wrong');
                 const options = document.querySelectorAll('.opt-btn');
                 if(options[q.correct - 1]) options[q.correct - 1].classList.add('opt-correct');
-                staffWrongs.push({
-                    qId: q.id || "",
-                    qText: currentLang === 'en' ? q.question_en : q.question_ms,
-                    userChoice: currentLang === 'en' ? q[`opt${idx}_en`] : q[`opt${idx}_ms`],
-                    correctText: currentLang === 'en' ? q[`opt${q.correct}_en`] : q[`opt${q.correct}_ms`]
-                });
+                staffWrongs.push({ qText: currentLang === 'en' ? q.question_en : q.question_ms, userChoice: currentLang === 'en' ? q[`opt${idx}_en`] : q[`opt${idx}_ms`], correctText: currentLang === 'en' ? q[`opt${q.correct}_en`] : q[`opt${q.correct}_ms`] });
             }
             if(quizIdx < currentQuizData.length - 1) document.getElementById('next-btn').classList.remove('hidden');
             else document.getElementById('submit-quiz-btn').classList.remove('hidden');
@@ -376,27 +293,11 @@
 
         async function saveQuizResult() {
             toggleLoader(true);
-            const rawPerc = (score/currentQuizData.length);
-            const payload = {
-                action: 'save_result',
-                name: document.getElementById('staff-name').value.toUpperCase().trim(),
-                outlet: document.getElementById('staff-outlet').value,
-                topic: document.getElementById('staff-topic').value,
-                score: `${score}/${currentQuizData.length}`,
-                perc: Math.round(rawPerc * 100) + "%", 
-                wrongAnswers: staffWrongs
-            };
-            try {
-                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-                alert("Quiz Submitted Successfully!");
-                location.reload();
-            } catch(e) {
-                alert("Error saving: " + e);
-                toggleLoader(false);
-            }
+            const payload = { action: 'save_result', name: document.getElementById('staff-name').value.toUpperCase().trim(), outlet: document.getElementById('staff-outlet').value, topic: document.getElementById('staff-topic').value, score: `${score}/${currentQuizData.length}`, perc: Math.round((score/currentQuizData.length) * 100) + "%", wrongAnswers: staffWrongs };
+            try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); alert("Quiz Submitted!"); location.reload(); }
+            catch(e) { alert("Error: " + e); toggleLoader(false); }
         }
 
-        // --- MANAGER LOGIC ---
         function loginManager() {
             if(document.getElementById('mgr-pass').value === "1234") {
                 document.getElementById('disp-mgr-name').innerText = document.getElementById('mgr-select').value;
@@ -419,97 +320,51 @@
                 document.getElementById('disp-staff-score').innerText = res.Score;
                 const cleanPerc = formatToPercent(res.Percentage);
                 document.getElementById('disp-staff-perc').innerText = cleanPerc;
-                
                 const num = parseInt(cleanPerc);
                 let lvl = "LOW", col = "text-red-600";
                 if(num >= 85) { lvl = "HIGH"; col = "text-emerald-600"; }
                 else if(num >= 71) { lvl = "MEDIUM"; col = "text-orange-500"; }
-                
                 const lEl = document.getElementById('disp-staff-level');
                 lEl.innerText = lvl; lEl.className = "text-xl font-black " + col;
-                
                 const wrongs = allWrongAnswers.filter(w => (w["Staff Name"]||w.staffName) === name);
                 const wCont = document.getElementById('wrongs-container');
                 const wList = document.getElementById('wrongs-list');
-                if(wrongs.length > 0) {
-                    wCont.classList.remove('hidden');
-                    wList.innerHTML = wrongs.map(w => `• ${w["Question Text"]||w.qText} (Ans: ${w["Correct Answer"]||w.correctText})`).join('<br>');
-                } else wCont.classList.add('hidden');
+                if(wrongs.length > 0) { wCont.classList.remove('hidden'); wList.innerHTML = wrongs.map(w => `• ${w["Question Text"]||w.qText} (Ans: ${w["Correct Answer"]||w.correctText})`).join('<br>'); }
+                else wCont.classList.add('hidden');
             }
         }
 
         async function submitManagerReport() {
-            if(!document.getElementById('rep-date').value) return alert("Please select training date");
+            if(!document.getElementById('rep-date').value) return alert("Select date");
             toggleLoader(true);
-            const payload = {
-                action: 'save_report',
-                manager: document.getElementById('mgr-select').value,
-                outlet: document.getElementById('mgr-outlet').value,
-                staffName: document.getElementById('rep-staff').value,
-                staffScore: document.getElementById('disp-staff-perc').innerText, 
-                trainTitle: document.getElementById('rep-topic').value,           
-                trainingDate: document.getElementById('rep-date').value,
-                level: document.getElementById('disp-staff-level').innerText,      
-                comments: document.getElementById('mgr-comment').value,            
-                focus: document.getElementById('mgr-housebrand').value,             
-                gaps: document.getElementById('mgr-gaps').value,                  
-                rec: document.getElementById('mgr-recom').value                   
-            };
-            try {
-                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-                alert("Report Submitted!");
-                location.reload();
-            } catch(e) {
-                alert("Error saving: " + e);
-                toggleLoader(false);
-            }
+            const payload = { action: 'save_report', manager: document.getElementById('mgr-select').value, outlet: document.getElementById('mgr-outlet').value, staffName: document.getElementById('rep-staff').value, staffScore: document.getElementById('disp-staff-perc').innerText, trainTitle: document.getElementById('rep-topic').value, trainingDate: document.getElementById('rep-date').value, level: document.getElementById('disp-staff-level').innerText, comments: document.getElementById('mgr-comment').value, focus: document.getElementById('mgr-housebrand').value, gaps: document.getElementById('mgr-gaps').value, rec: document.getElementById('mgr-recom').value };
+            try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); alert("Report Submitted!"); location.reload(); }
+            catch(e) { alert("Error: " + e); toggleLoader(false); }
         }
 
-        // --- SUPERVISOR LOGIC ---
-        function loginSupervisor() {
-            if(document.getElementById('sup-pass').value === "admin") {
-                renderSupervisorStats();
-                showView('view-supervisor-dash');
-            } else alert("Access Denied");
-        }
+        function loginSupervisor() { if(document.getElementById('sup-pass').value === "admin") { renderSupervisorStats(); showView('view-supervisor-dash'); } else alert("Denied"); }
 
         function renderSupervisorStats() {
             document.getElementById('stat-staff').innerText = allResults.length;
             document.getElementById('stat-reports').innerText = allReports.length;
             document.getElementById('stat-outlets').innerText = [...new Set(allResults.map(r => r.Outlet))].length;
-            
             const avg = allResults.length ? Math.round(allResults.reduce((a,b) => a + parseInt(formatToPercent(b.Percentage)), 0) / allResults.length) : 0;
             document.getElementById('stat-avg').innerText = avg + "%";
-
-            document.getElementById('table-log').innerHTML = allResults.map(r => `
-                <tr class="border-b">
-                    <td class="p-3 text-slate-400">${new Date(r.Timestamp).toLocaleDateString('en-GB')}</td>
-                    <td class="p-3 font-bold">${r.Name}</td>
-                    <td class="p-3">${r.Outlet}</td>
-                    <td class="p-3 text-indigo-600 font-bold">${formatToPercent(r.Percentage)}</td>
-                    <td class="p-3 text-xs">${r.Topic}</td>
-                </tr>
-            `).join('');
+            document.getElementById('table-log').innerHTML = allResults.map(r => `<tr class="border-b"><td class="p-3 text-slate-400">${new Date(r.Timestamp).toLocaleDateString('en-GB')}</td><td class="p-3 font-bold">${r.Name}</td><td class="p-3">${r.Outlet}</td><td class="p-3 text-indigo-600 font-bold">${formatToPercent(r.Percentage)}</td><td class="p-3 text-xs">${r.Topic}</td></tr>`).join('');
         }
 
         function filterLog() {
             const q = document.getElementById('log-search').value.toUpperCase();
-            document.querySelectorAll('#table-log tr').forEach(tr => {
-                tr.style.display = tr.innerText.toUpperCase().includes(q) ? '' : 'none';
-            });
+            document.querySelectorAll('#table-log tr').forEach(tr => tr.style.display = tr.innerText.toUpperCase().includes(q) ? '' : 'none');
         }
 
         function exportFullData() {
             let csv = "Timestamp,Staff,Outlet,Topic,Score,Percentage\n";
-            allResults.forEach(r => {
-                csv += `"${r.Timestamp}","${r.Name}","${r.Outlet}","${r.Topic}","${r.Score}","${formatToPercent(r.Percentage)}"\n`;
-            });
+            allResults.forEach(r => csv += `"${r.Timestamp}","${r.Name}","${r.Outlet}","${r.Topic}","${r.Score}","${formatToPercent(r.Percentage)}"\n`);
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Assessment_Export.csv';
-            a.click();
+            a.href = url; a.download = 'Assessment_Export.csv'; a.click();
         }
     </script>
 </body>
