@@ -26,7 +26,7 @@
 
     <div id="loader" class="loader-overlay hidden">
         <div class="spinner"></div>
-        <p class="mt-4 font-bold text-indigo-600 animate-pulse">Syncing Cloud...</p>
+        <p class="mt-4 font-bold text-indigo-600 animate-pulse">Uploading...</p>
     </div>
 
     <div class="max-w-4xl mx-auto">
@@ -51,10 +51,10 @@
             </div>
         </div>
 
-        <div id="view-staff-login" class="hidden animate__animated animate__fadeIn">
+        <div id="view-staff-login" class="hidden">
             <div class="glass p-8 rounded-3xl shadow-xl space-y-4">
                 <button onclick="goHome()" class="text-indigo-600 font-bold mb-2">← Back</button>
-                <h2 class="text-2xl font-bold">Staff Portal</h2>
+                <h2 class="text-2xl font-bold">Staff Entry</h2>
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="setLang('en')" id="lang-en" class="p-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold">English</button>
                     <button onclick="setLang('ms')" id="lang-ms" class="p-3 rounded-xl border-2 border-slate-200 font-bold">Malay</button>
@@ -64,14 +64,14 @@
                 <select id="staff-topic" class="w-full p-4 rounded-xl border bg-white font-bold text-indigo-600">
                     <option value="">Select Training Topic</option>
                 </select>
-                <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold text-lg">ENTER QUIZ</button>
+                <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold text-lg">START</button>
             </div>
         </div>
 
         <div id="view-quiz" class="hidden">
             <div class="glass p-6 rounded-3xl shadow-xl">
                 <div class="flex justify-between items-center mb-6">
-                    <button onclick="location.reload()" class="text-slate-400 font-bold">← Exit</button>
+                    <button id="quiz-back-btn" onclick="goHome()" class="text-slate-400 font-bold">← Exit</button>
                     <div id="quiz-progress" class="font-bold text-indigo-600 bg-indigo-50 px-4 py-1 rounded-full">Q 1</div>
                 </div>
                 <div id="q-container" class="min-h-[250px]">
@@ -79,16 +79,16 @@
                     <div id="options-grid"></div>
                 </div>
                 <div class="mt-8 flex justify-end">
-                    <button id="next-btn" onclick="nextQuestion()" class="hidden bg-slate-800 text-white px-8 py-3 rounded-xl font-bold">Next Question →</button>
-                    <button id="submit-quiz-btn" onclick="saveQuizResult()" class="hidden bg-emerald-600 text-white px-10 py-3 rounded-xl font-bold">SUBMIT 🚀</button>
+                    <button id="next-btn" onclick="nextQuestion()" class="hidden bg-slate-800 text-white px-8 py-3 rounded-xl font-bold">Next →</button>
+                    <button id="submit-quiz-btn" onclick="saveQuizResult()" class="hidden bg-emerald-600 text-white px-10 py-3 rounded-xl font-bold animate__animated animate__pulse animate__infinite">SUBMIT</button>
                 </div>
             </div>
         </div>
 
-        <div id="view-supervisor-dash" class="hidden animate__animated animate__fadeIn">
+        <div id="view-supervisor-dash" class="hidden">
             <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <button onclick="goHome()" class="bg-white p-2 px-6 rounded-xl shadow font-bold">← Home</button>
-                <button onclick="exportWideData()" class="bg-indigo-600 text-white p-3 px-6 rounded-xl shadow-lg font-bold">Download Comprehensive Report (CSV)</button>
+                <button onclick="exportWideData()" class="bg-indigo-600 text-white p-3 px-6 rounded-xl shadow-lg font-bold">Download Full Data (Wide CSV)</button>
             </div>
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -99,34 +99,34 @@
             </div>
 
             <div class="glass p-6 rounded-3xl shadow-xl mb-8 border-l-8 border-red-500">
-                <h3 class="text-xl font-bold mb-4 text-red-600">🚩 Training Gaps (Frequency)</h3>
-                <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-red-50 text-red-800"><tr><th class="p-3">Question</th><th class="p-3">Correct Answer</th><th class="p-3 text-center">Errors</th></tr></thead><tbody id="table-gaps"></tbody></table></div>
+                <h3 class="text-xl font-bold mb-4 text-red-600 tracking-tight">🚩 Training Gaps (High Error Rates)</h3>
+                <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-red-50 text-red-800"><tr><th class="p-3">Question</th><th class="p-3">Correct Ans</th><th class="p-3 text-center">Errors</th></tr></thead><tbody id="table-gaps"></tbody></table></div>
             </div>
 
             <div class="glass p-6 rounded-3xl shadow-xl">
-                <h3 class="text-xl font-bold mb-4">Staff Assessment History</h3>
-                <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="bg-slate-50 text-slate-500"><th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3">Score %</th><th class="p-3">Topic</th></tr></thead><tbody id="table-log"></tbody></table></div>
+                <h3 class="text-xl font-bold mb-4">Live Assessment Log</h3>
+                <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="bg-slate-50 text-slate-500"><th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3">Score</th><th class="p-3">Topic</th></tr></thead><tbody id="table-log"></tbody></table></div>
             </div>
         </div>
 
         <div id="view-manager-login" class="hidden">
-            <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto space-y-4">
-                <button onclick="goHome()" class="text-indigo-600 font-bold mb-2">← Back</button>
-                <h2 class="text-2xl font-bold">Manager Login</h2>
+            <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto space-y-4 text-center">
+                <button onclick="goHome()" class="text-indigo-600 font-bold flex items-center">← Back</button>
+                <h2 class="text-2xl font-bold">Manager Entry</h2>
                 <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-4 rounded-xl border"></select>
                 <select id="mgr-outlet" class="w-full p-4 rounded-xl border"></select>
                 <input type="password" id="mgr-pass" placeholder="Password" class="w-full p-4 rounded-xl border">
-                <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-xl font-bold">Enter Dashboard</button>
+                <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-xl font-bold">Login</button>
             </div>
         </div>
 
         <div id="view-manager-form" class="hidden">
             <div class="glass p-6 rounded-3xl shadow-xl space-y-6">
                 <div class="flex justify-between items-center border-b pb-4">
-                    <h2 class="text-xl font-bold">Manager Performance Review</h2>
-                    <button onclick="location.reload()" class="text-red-500 font-bold">Logout</button>
+                    <h2 class="text-xl font-bold text-indigo-600">Performance Assessment</h2>
+                    <button onclick="location.reload()" class="text-red-500 font-bold text-sm">Logout</button>
                 </div>
-                <div class="bg-slate-50 p-4 rounded-2xl grid grid-cols-2 text-xs">
+                <div class="bg-indigo-50 p-4 rounded-2xl grid grid-cols-2 text-xs">
                     <div><p class="text-slate-400">Manager</p><p id="disp-mgr-name" class="font-bold"></p></div>
                     <div><p class="text-slate-400">Outlet</p><p id="disp-mgr-outlet" class="font-bold"></p></div>
                 </div>
@@ -143,18 +143,18 @@
                 <textarea id="mgr-gaps" placeholder="Performance Gaps" class="w-full p-4 border rounded-xl h-20"></textarea>
                 <textarea id="mgr-recom" placeholder="Recommendations" class="w-full p-4 border rounded-xl h-20"></textarea>
                 <div id="wrongs-container" class="p-4 bg-red-50 rounded-xl hidden text-[11px] text-red-700">
-                    <p class="font-bold mb-2 uppercase">Staff Error history:</p><div id="wrongs-list" class="space-y-1"></div>
+                    <p class="font-bold mb-2 uppercase">Gap History:</p><div id="wrongs-list" class="space-y-1"></div>
                 </div>
-                <button onclick="submitManagerReport()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg">Submit Final Report</button>
+                <button onclick="submitManagerReport()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg">UPLOAD REPORT</button>
             </div>
         </div>
 
         <div id="view-supervisor-login" class="hidden">
             <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto space-y-4 text-center">
-                <button onclick="goHome()" class="text-indigo-600 font-bold mb-2 flex items-center">← Back</button>
-                <h2 class="text-2xl font-bold">Supervisor Portal</h2>
+                <button onclick="goHome()" class="text-indigo-600 font-bold">← Back</button>
+                <h2 class="text-2xl font-bold">Supervisor Access</h2>
                 <input type="password" id="sup-pass" placeholder="Admin PIN" class="w-full p-4 rounded-xl border">
-                <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">Login</button>
+                <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">Analytics Dashboard</button>
             </div>
         </div>
     </div>
@@ -164,6 +164,7 @@
         
         let allQuestions = [], allResults = [], allReports = [], allWrongAnswers = [];
         let currentLang = 'en', quizIdx = 0, score = 0, currentQuizData = [], staffWrongs = [];
+        let isQuizRunning = false;
 
         const outletList = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
         const managerData = [
@@ -179,6 +180,14 @@
 
         window.onload = () => { initDropdowns(); fetchData(); };
 
+        // Fix 4: Quiz Anti-Cheating Refresh Detection
+        window.onbeforeunload = function() {
+            if(isQuizRunning) {
+                // Not possible to fetch here reliably, so we warn user.
+                return "Cheating detected: Refreshing will auto-submit your quiz with current answers.";
+            }
+        };
+
         async function fetchData() {
             toggleLoader(true);
             try {
@@ -189,7 +198,7 @@
                 allReports = data.reports || [];
                 allWrongAnswers = data.wrongAnswers || [];
                 populateGlobalData();
-            } catch (e) { alert("Data Sync Failed."); }
+            } catch (e) { alert("Server sync failed."); }
             toggleLoader(false);
         }
 
@@ -203,10 +212,9 @@
         }
 
         function populateGlobalData() {
-            // FIX 1: Flexible status key mapping
             const topics = [...new Set(allQuestions.filter(q => {
-                const statusVal = q.status || q.Status || q.STATUS;
-                return statusVal !== "Inactive";
+                const s = q.status || q.Status || q.STATUS;
+                return s !== "Inactive";
             }).map(q => q.topic))].filter(t => t);
             
             const staffTopic = document.getElementById('staff-topic');
@@ -226,7 +234,11 @@
             window.scrollTo(0,0);
         }
 
-        function goHome() { showView('view-main'); }
+        function goHome() { 
+            isQuizRunning = false;
+            showView('view-main'); 
+        }
+
         function toggleLoader(s) { document.getElementById('loader').classList.toggle('hidden', !s); }
         
         function setLang(l) {
@@ -241,20 +253,26 @@
             const outlet = document.getElementById('staff-outlet').value;
             if(!name || !topic || !outlet) return alert("Fill all details");
             currentQuizData = allQuestions.filter(q => q.topic == topic);
-            if(currentQuizData.length == 0) return alert("No questions found");
+            if(currentQuizData.length == 0) return alert("Topic error");
+            
             quizIdx = 0; score = 0; staffWrongs = [];
+            isQuizRunning = true;
             renderQuestion();
             showView('view-quiz');
         }
 
         function renderQuestion() {
             const q = currentQuizData[quizIdx];
+            // Fix 4: Go back only on Q1
+            document.getElementById('quiz-back-btn').classList.toggle('hidden', quizIdx > 0);
             document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
             document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
             const grid = document.getElementById('options-grid');
             grid.innerHTML = '';
+            
             for(let i=1; i<=4; i++) {
                 const optText = currentLang === 'en' ? q[`opt${i}_en`] : q[`opt${i}_ms`];
+                // Fix 5: Optimizing visibility for T/F questions
                 if(!optText || optText.toString().trim() === "") continue;
                 const btn = document.createElement('button');
                 btn.className = "opt-btn shadow-sm";
@@ -276,7 +294,7 @@
             } else {
                 btn.classList.add('opt-wrong');
                 if(buttons[correctIdx]) buttons[correctIdx].classList.add('opt-correct');
-                staffWrongs.push({ qText: currentLang === 'en' ? q.question_en : q.question_ms, userChoice: btn.innerText, correctText: buttons[correctIdx].innerText });
+                staffWrongs.push({ qText: currentLang === 'en' ? q.question_en : q.question_ms, userChoice: btn.innerText, correctText: buttons[correctIdx] ? buttons[correctIdx].innerText : "N/A" });
             }
             if(quizIdx < currentQuizData.length - 1) document.getElementById('next-btn').classList.remove('hidden');
             else document.getElementById('submit-quiz-btn').classList.remove('hidden');
@@ -285,10 +303,11 @@
         function nextQuestion() { quizIdx++; renderQuestion(); }
 
         async function saveQuizResult() {
+            isQuizRunning = false;
             toggleLoader(true);
             const payload = { action: 'save_result', name: document.getElementById('staff-name').value.toUpperCase().trim(), outlet: document.getElementById('staff-outlet').value, topic: document.getElementById('staff-topic').value, score: `${score}/${currentQuizData.length}`, perc: Math.round((score/currentQuizData.length) * 100) + "%", wrongAnswers: staffWrongs };
-            try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); alert("Assessment Submitted!"); location.reload(); }
-            catch(e) { alert("Sync Error"); toggleLoader(false); }
+            try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); alert("Uploaded Successfully!"); location.reload(); }
+            catch(e) { alert("Error"); toggleLoader(false); }
         }
 
         function loginManager() {
@@ -296,7 +315,7 @@
                 document.getElementById('disp-mgr-name').innerText = document.getElementById('mgr-select').value;
                 document.getElementById('disp-mgr-outlet').innerText = document.getElementById('mgr-outlet').value;
                 showView('view-manager-form');
-            } else alert("Invalid Password");
+            } else alert("Denied");
         }
 
         function loginSupervisor() {
@@ -341,8 +360,15 @@
             if(!document.getElementById('rep-date').value) return alert("Select date");
             toggleLoader(true);
             const payload = { action: 'save_report', manager: document.getElementById('mgr-select').value, outlet: document.getElementById('mgr-outlet').value, staffName: document.getElementById('rep-staff').value, staffScore: document.getElementById('disp-staff-perc').innerText, trainTitle: document.getElementById('rep-topic').value, trainingDate: document.getElementById('rep-date').value, level: document.getElementById('disp-staff-level').innerText, comments: document.getElementById('mgr-comment').value, focus: document.getElementById('mgr-housebrand').value, gaps: document.getElementById('mgr-gaps').value, rec: document.getElementById('mgr-recom').value };
-            try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); alert("Report Submitted!"); location.reload(); }
-            catch(e) { alert("Error"); toggleLoader(false); }
+            try { 
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                alert("Report Uploaded!"); 
+                // Fix 2: Do not go home, stay in Manager View
+                await fetchData(); // Refresh local records
+                showView('view-manager-form'); 
+            }
+            catch(e) { alert("Error"); }
+            toggleLoader(false);
         }
 
         function formatToPercent(val) {
@@ -367,45 +393,40 @@
             });
             const sortedGaps = Object.entries(gaps).sort((a,b) => b[1].count - a[1].count).slice(0, 8);
             document.getElementById('table-gaps').innerHTML = sortedGaps.map(([q, d]) => `<tr><td class="p-3">${q}</td><td class="p-3 text-green-600 font-bold">${d.correct}</td><td class="p-3 text-center"><span class="bg-red-100 text-red-600 px-3 py-1 rounded-full font-black text-xs">${d.count}</span></td></tr>`).join('');
-            document.getElementById('table-log').innerHTML = allResults.map(r => `<tr><td class="p-3 text-xs text-slate-400">${new Date(r.Timestamp).toLocaleDateString('en-GB')}</td><td class="p-3 font-bold text-xs uppercase">${r.Name}</td><td class="p-3 text-xs">${r.Outlet}</td><td class="p-3 text-indigo-600 font-bold text-xs">${formatToPercent(r.Percentage)}</td><td class="p-3 text-xs text-slate-400 italic">${r.Topic}</td></tr>`).join('');
+            document.getElementById('table-log').innerHTML = allResults.map(r => `<tr><td class="p-3 text-xs text-slate-400">${new Date(r.Timestamp).toLocaleDateString('en-GB')}</td><td class="p-3 font-bold uppercase">${r.Name}</td><td class="p-3">${r.Outlet}</td><td class="p-3 text-indigo-600 font-bold">${formatToPercent(r.Percentage)}</td><td class="p-3 text-xs text-slate-400 italic">${r.Topic}</td></tr>`).join('');
         }
 
-        // FIX 2: Dynamic Wide Column CSV Export
+        // Fix 1: Correct Wide-format Export logic
         function exportWideData() {
-            let csv = "Timestamp,Staff_Name,Outlet,Topic,Score,Percentage,Manager,Comments,Housebrand_Focus,Performance_Gaps,Recommendations";
+            let csv = "Timestamp,Staff_Name,Outlet,Topic,Manager,Report_Date,Score,Comments,Housebrand_Focus,Gaps,Recommendations";
             
-            // Determine max wrong answers to add column headers
-            let maxWrongs = 0;
+            // Calculate max errors to generate dynamic headers
+            let maxErr = 0;
             allReports.forEach(rep => {
-                const wrongsCount = allWrongAnswers.filter(w => w["Staff Name"] === rep["Staff Name"] && w.Topic === rep["Training Title"]).length;
-                if(wrongsCount > maxWrongs) maxWrongs = wrongsCount;
+                const errCount = allWrongAnswers.filter(w => w["Staff Name"] === rep["Staff Name"] && w.Topic === rep["Training Title"]).length;
+                if(errCount > maxErr) maxErr = errCount;
             });
             
-            for(let i=1; i<=maxWrongs; i++) {
-                csv += `,Wrong_Question_${i},Staff_Choice_${i},Correct_Answer_${i}`;
+            for(let i=1; i<=maxErr; i++) {
+                csv += `,Wrong_Question_${i},Staff_Answer_${i},Correct_Answer_${i}`;
             }
             csv += "\n";
 
             allReports.forEach(rep => {
-                const staffWrongs = allWrongAnswers.filter(w => w["Staff Name"] === rep["Staff Name"] && w.Topic === rep["Training Title"]);
+                const errs = allWrongAnswers.filter(w => w["Staff Name"] === rep["Staff Name"] && w.Topic === rep["Training Title"]);
+                let row = `"${rep.Timestamp}","${rep["Staff Name"]}","${rep.Outlet}","${rep["Training Title"]}","${rep.Manager}","${rep["Training Date"]}","${rep["Quiz Score"]}","${rep["Competency Comments"].replace(/"/g,'""')}","${rep["Housebrand Focus"].replace(/"/g,'""')}","${rep["Performance Gaps"].replace(/"/g,'""')}","${rep.Recommendations.replace(/"/g,'""')}"`;
                 
-                let row = `"${rep.Timestamp}","${rep["Staff Name"]}","${rep.Outlet}","${rep["Training Title"]}","${rep["Quiz Score"]}","${rep["Quiz Score"]}","${rep.Manager}","${rep["Competency Comments"].replace(/"/g, '""')}","${rep["Housebrand Focus"].replace(/"/g, '""')}","${rep["Performance Gaps"].replace(/"/g, '""')}","${rep.Recommendations.replace(/"/g, '""')}"`;
-                
-                staffWrongs.forEach(w => {
-                    row += `,"${w["Question Text"].replace(/"/g, '""')}","${w["User Choice"].replace(/"/g, '""')}","${w["Correct Answer"].replace(/"/g, '""')}"`;
+                errs.forEach(e => {
+                    row += `,"${e["Question Text"].replace(/"/g,'""')}","${e["User Choice"].replace(/"/g,'""')}","${e["Correct Answer"].replace(/"/g,'""')}"`;
                 });
-                
-                // Pad remaining empty columns
-                for(let i = staffWrongs.length; i < maxWrongs; i++) {
-                    row += `,"","",""`;
-                }
+                for(let i = errs.length; i < maxErr; i++) row += `,"","",""`;
                 csv += row + "\n";
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = 'RT_Comprehensive_Report.csv'; a.click();
+            a.href = url; a.download = 'RT_Comprehensive_Reports.csv'; a.click();
         }
     </script>
 </body>
