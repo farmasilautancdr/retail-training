@@ -129,7 +129,7 @@
                 </div>
 
                 <div class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-bold mb-2">Select Staff Member</label>
                             <select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border border-slate-200 outline-none"></select>
@@ -138,11 +138,15 @@
                             <label class="block text-sm font-bold mb-2">Training Topic</label>
                             <select id="rep-topic" class="w-full p-4 rounded-xl border border-slate-200 outline-none"></select>
                         </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Training Date</label>
+                            <input type="date" id="rep-date" class="w-full p-4 rounded-xl border border-slate-200 outline-none">
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-3 gap-4 text-center">
                         <div class="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Score</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Raw Score</p>
                             <p id="disp-staff-score" class="text-xl font-black text-indigo-600">--</p>
                         </div>
                         <div class="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
@@ -256,7 +260,6 @@
         window.onload = () => {
             initDropdowns();
             fetchData();
-            // Register Service Worker for PWA
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log("SW failed", err));
             }
@@ -295,7 +298,6 @@
             document.getElementById('lang-ms').className = l === 'ms' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
         }
 
-        // --- QUIZ LOGIC ---
         function startQuiz() {
             const name = document.getElementById('staff-name').value;
             const topic = document.getElementById('staff-topic').value;
@@ -369,9 +371,12 @@
             location.reload();
         }
 
-        // --- MANAGER LOGIC ---
         function loginManager() {
-            if(document.getElementById('mgr-pass').value === "1234") showView('view-manager-form');
+            if(document.getElementById('mgr-pass').value === "1234") {
+                document.getElementById('disp-mgr-name').innerText = document.getElementById('mgr-select').value;
+                document.getElementById('disp-mgr-outlet').innerText = document.getElementById('mgr-outlet').value;
+                showView('view-manager-form');
+            }
             else alert("Wrong password");
         }
 
@@ -402,11 +407,24 @@
             const res = allResults.find(r => r.Name === name);
             if(res) {
                 document.getElementById('disp-staff-score').innerText = res.Score;
-                document.getElementById('disp-staff-perc').innerText = res.Percentage;
-                const p = parseInt(res.Percentage);
+                
+                // Fix: Handle 0.78 vs 78% logic
+                let percentageStr = res.Percentage;
+                let numericValue = parseFloat(percentageStr);
+                
+                // If it's a decimal like 0.78, multiply by 100
+                if(numericValue > 0 && numericValue < 1) {
+                    numericValue = Math.round(numericValue * 100);
+                } else {
+                    numericValue = parseInt(percentageStr);
+                }
+
+                document.getElementById('disp-staff-perc').innerText = numericValue + "%";
+                
                 let lvl = "LOW", col = "text-red-600";
-                if(p >= 85) { lvl = "HIGH"; col = "text-emerald-600"; }
-                else if(p >= 71) { lvl = "MEDIUM"; col = "text-orange-500"; }
+                if(numericValue >= 85) { lvl = "HIGH"; col = "text-emerald-600"; }
+                else if(numericValue >= 71) { lvl = "MEDIUM"; col = "text-orange-500"; }
+                
                 const lEl = document.getElementById('disp-staff-level');
                 lEl.innerText = lvl; lEl.className = "text-xl font-black " + col;
                 
@@ -421,6 +439,7 @@
         }
 
         async function submitManagerReport() {
+            if(!document.getElementById('rep-date').value) return alert("Please select training date");
             toggleLoader(true);
             const payload = {
                 action: 'save_report',
@@ -429,6 +448,7 @@
                 staffName: document.getElementById('rep-staff').value,
                 quizScore: document.getElementById('disp-staff-perc').innerText,
                 trainingTitle: document.getElementById('rep-topic').value,
+                trainingDate: document.getElementById('rep-date').value,
                 skillLevel: document.getElementById('disp-staff-level').innerText,
                 competencyComments: document.getElementById('mgr-comment').value,
                 housebrandFocus: document.getElementById('mgr-housebrand').value,
@@ -440,7 +460,6 @@
             location.reload();
         }
 
-        // --- SUPERVISOR LOGIC ---
         function loginSupervisor() {
             if(document.getElementById('sup-pass').value === "admin") {
                 renderSupervisorStats();
@@ -452,18 +471,25 @@
             document.getElementById('stat-staff').innerText = allResults.length;
             document.getElementById('stat-reports').innerText = allReports.length;
             document.getElementById('stat-outlets').innerText = [...new Set(allResults.map(r => r.Outlet))].length;
-            const avg = allResults.length ? Math.round(allResults.reduce((a,b)=>a+parseInt(b.Percentage),0)/allResults.length) : 0;
+            
+            const avg = allResults.length ? Math.round(allResults.reduce((a,b)=>{
+                let p = parseFloat(b.Percentage);
+                return a + (p < 1 ? p*100 : p);
+            },0)/allResults.length) : 0;
             document.getElementById('stat-avg').innerText = avg + "%";
 
-            document.getElementById('table-log').innerHTML = allResults.map(r => `
+            document.getElementById('table-log').innerHTML = allResults.map(r => {
+                let p = parseFloat(r.Percentage);
+                let displayPerc = p < 1 ? Math.round(p*100) : Math.round(p);
+                return `
                 <tr class="border-b">
-                    <td class="p-3 text-slate-400">${new Date(r.Timestamp).toLocaleDateString()}</td>
+                    <td class="p-3 text-slate-400">${new Date(r.Timestamp).toLocaleDateString('en-GB')}</td>
                     <td class="p-3 font-bold">${r.Name}</td>
                     <td class="p-3">${r.Outlet}</td>
-                    <td class="p-3 text-indigo-600 font-bold">${r.Percentage}</td>
+                    <td class="p-3 text-indigo-600 font-bold">${displayPerc}%</td>
                     <td class="p-3 text-xs">${r.Topic}</td>
                 </tr>
-            `).join('');
+            `}).join('');
 
             const gaps = {};
             allWrongAnswers.forEach(w => {
@@ -478,10 +504,17 @@
             `).join('');
         }
 
+        function filterLog() {
+            const query = document.getElementById('log-search').value.toUpperCase();
+            document.querySelectorAll('#table-log tr').forEach(tr => {
+                tr.style.display = tr.innerText.toUpperCase().includes(query) ? '' : 'none';
+            });
+        }
+
         function exportFullData() {
             let csv = "Timestamp,Staff,Outlet,Topic,Score,Percentage,Wrong_Answers\n";
             allResults.forEach(r => {
-                const wrongs = allWrongAnswers.filter(w => w["Staff Name"] === r.Name).map(w => w["Question Text"]).join(" | ");
+                const wrongs = allWrongAnswers.filter(w => w["Staff Name"] === r.Name).map(w => w["Question Text"].replace(/,/g,'')).join(" | ");
                 csv += `"${r.Timestamp}","${r.Name}","${r.Outlet}","${r.Topic}","${r.Score}","${r.Percentage}","${wrongs}"\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
