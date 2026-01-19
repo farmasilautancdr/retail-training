@@ -115,8 +115,9 @@
             <div class="glass p-8 rounded-3xl shadow-xl">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-2xl font-bold">Staff Assessment Report</h2>
-                    <button onclick="goHome()" class="bg-slate-100 p-2 rounded-lg font-bold">Logout</button>
+                    <button onclick="location.reload()" class="bg-slate-100 p-2 rounded-lg font-bold">Logout</button>
                 </div>
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 bg-slate-50 p-6 rounded-2xl">
                     <div>
                         <p class="text-xs font-bold text-slate-400 uppercase">Manager</p>
@@ -255,10 +256,10 @@
             try {
                 const res = await fetch(GAS_URL);
                 const data = await res.json();
-                allQuestions = data.questions;
-                allResults = data.results;
-                allReports = data.reports;
-                allWrongAnswers = data.wrongAnswers;
+                allQuestions = data.questions || [];
+                allResults = data.results || [];
+                allReports = data.reports || [];
+                allWrongAnswers = data.wrongAnswers || [];
                 populateManagerAssessData();
             } catch (e) { console.error("Fetch Error:", e); }
             toggleLoader(false);
@@ -269,6 +270,36 @@
             outletList.forEach(o => staffO.innerHTML += `<option value="${o}">${o}</option>`);
             const mgrS = document.getElementById('mgr-select');
             managerData.forEach(m => mgrS.innerHTML += `<option value="${m.id}">${m.id}</option>`);
+        }
+
+        function populateManagerAssessData() {
+            // Populate Topics for Staff and Manager Views
+            const topics = [...new Set(allQuestions.map(q => q.topic))];
+            const staffTopic = document.getElementById('staff-topic');
+            const repTopic = document.getElementById('rep-topic');
+            
+            staffTopic.innerHTML = '<option value="">Select Training Topic</option>';
+            repTopic.innerHTML = '<option value="">Select Topic</option>';
+            
+            topics.filter(t => t).forEach(t => {
+                staffTopic.innerHTML += `<option value="${t}">${t}</option>`;
+                repTopic.innerHTML += `<option value="${t}">${t}</option>`;
+            });
+
+            // Populate Staff Results for Manager
+            const repStaff = document.getElementById('rep-staff');
+            repStaff.innerHTML = '<option value="">Select Staff</option>';
+            allResults.sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp)).forEach(r => {
+                repStaff.innerHTML += `<option value="${r.Name}">${r.Name} (${r.Topic})</option>`;
+            });
+        }
+
+        function formatToPercent(val) {
+            let n = parseFloat(val);
+            if(isNaN(n)) return "0%";
+            // Fix: handle decimal (0.85) vs whole numbers (85)
+            if (n > 0 && n <= 1) return Math.round(n * 100) + "%";
+            return Math.round(n) + "%";
         }
 
         function showView(id) {
@@ -381,34 +412,6 @@
             if(m) m.outlets.forEach(o => outS.innerHTML += `<option value="${o}">${o}</option>`);
         }
 
-        function populateManagerAssessData() {
-            const topics = [...new Set(allQuestions.map(q => q.topic))];
-            const ts = document.getElementById('rep-topic');
-            const sts = document.getElementById('rep-staff');
-            const stsLogin = document.getElementById('staff-topic');
-
-            ts.innerHTML = '<option value="">Select Topic</option>';
-            stsLogin.innerHTML = '<option value="">Select Training Topic</option>';
-            topics.forEach(t => { 
-                ts.innerHTML += `<option>${t}</option>`;
-                stsLogin.innerHTML += `<option>${t}</option>`;
-            });
-
-            sts.innerHTML = '<option value="">Select Staff</option>';
-            allResults.sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp)).forEach(r => {
-                sts.innerHTML += `<option value="${r.Name}">${r.Name} (${r.Topic})</option>`;
-            });
-        }
-
-        // Percentage Utility to handle GAS decimal conversion
-        function formatToPercent(val) {
-            let n = parseFloat(val);
-            if(isNaN(n)) return "0%";
-            // If GAS returns 0.85 instead of 85, multiply by 100
-            if (n > 0 && n <= 1) return Math.round(n * 100) + "%";
-            return Math.round(n) + "%";
-        }
-
         function onStaffSelect() {
             const name = document.getElementById('rep-staff').value;
             const res = allResults.find(r => r.Name === name);
@@ -425,7 +428,6 @@
                 const lEl = document.getElementById('disp-staff-level');
                 lEl.innerText = lvl; lEl.className = "text-xl font-black " + col;
                 
-                // Fetch wrongs using either Staff Name or name key
                 const wrongs = allWrongAnswers.filter(w => (w["Staff Name"]||w.staffName) === name);
                 const wCont = document.getElementById('wrongs-container');
                 const wList = document.getElementById('wrongs-list');
@@ -444,14 +446,14 @@
                 manager: document.getElementById('mgr-select').value,
                 outlet: document.getElementById('mgr-outlet').value,
                 staffName: document.getElementById('rep-staff').value,
-                staffScore: document.getElementById('disp-staff-perc').innerText, // Corrected key to match GAS
-                trainTitle: document.getElementById('rep-topic').value,           // Corrected key to match GAS
+                staffScore: document.getElementById('disp-staff-perc').innerText, 
+                trainTitle: document.getElementById('rep-topic').value,           
                 trainingDate: document.getElementById('rep-date').value,
-                level: document.getElementById('disp-staff-level').innerText,      // Corrected key to match GAS
-                comments: document.getElementById('mgr-comment').value,            // Corrected key to match GAS
-                focus: document.getElementById('mgr-housebrand').value,             // Corrected key to match GAS
-                gaps: document.getElementById('mgr-gaps').value,                  // Corrected key to match GAS
-                rec: document.getElementById('mgr-recom').value                   // Corrected key to match GAS
+                level: document.getElementById('disp-staff-level').innerText,      
+                comments: document.getElementById('mgr-comment').value,            
+                focus: document.getElementById('mgr-housebrand').value,             
+                gaps: document.getElementById('mgr-gaps').value,                  
+                rec: document.getElementById('mgr-recom').value                   
             };
             try {
                 await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
