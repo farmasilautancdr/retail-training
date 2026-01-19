@@ -4,622 +4,495 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RT Pro | RetailTraining</title>
+    
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RT Pro">
+    <meta name="theme-color" content="#4f46e5">
+    
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f3f4f6; -webkit-tap-highlight-color: transparent; color: #1f2937; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .btn-grad { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); transition: 0.3s; color: white; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); }
+        .btn-grad { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; transition: 0.3s; }
+        .btn-grad:active { transform: scale(0.98); }
+        .loader-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 100; display: flex; justify-content: center; align-items: center; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .opt-btn { transition: all 0.2s; border: 2px solid #e2e8f0; }
+        .opt-correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
+        .opt-wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
         .hidden { display: none !important; }
-        /* Requirement 11: Spinner */
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
-        /* Requirement 9: Colors */
-        .answer-correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #14532d !important; }
-        .answer-wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #7f1d1d !important; }
-        .stat-card { @apply p-4 bg-white rounded-2xl shadow-sm border border-gray-100 text-center; }
     </style>
 </head>
-<body class="min-h-screen pb-10">
+<body class="p-4">
 
-    <div id="loader-overlay" class="hidden fixed inset-0 bg-white/80 z-50 flex flex-col items-center justify-center">
-        <div class="spinner mb-4"></div>
-        <p id="loader-text" class="font-bold text-indigo-700 animate-pulse">Processing...</p>
-    </div>
+    <div id="loader" class="loader-overlay hidden"><div class="spinner"></div></div>
 
-    <nav class="bg-white shadow-sm p-4 sticky top-0 z-40 border-b flex justify-between items-center">
-        <h1 class="font-bold text-indigo-700">RT Pro</h1>
-        <div id="nav-status" class="text-[10px] bg-gray-100 px-2 py-1 rounded uppercase font-mono">Loading Data...</div>
-    </nav>
-
-    <main class="max-w-4xl mx-auto px-4 mt-6">
-        
-        <div id="view-roles" class="space-y-4">
-            <div onclick="showView('staff-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition-transform">
-                <span class="text-3xl">👤</span>
-                <div><h2 class="font-bold">Staff Member</h2><p class="text-xs text-gray-500">Take Assessment</p></div>
-            </div>
-            <div onclick="showView('manager-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition-transform">
-                <span class="text-3xl">👔</span>
-                <div><h2 class="font-bold">Manager Access</h2><p class="text-xs text-gray-500">Performance Report</p></div>
-            </div>
-            <div onclick="showView('supervisor-login')" class="p-6 glass rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition-transform">
-                <span class="text-3xl">⭐</span>
-                <div><h2 class="font-bold">Supervisor</h2><p class="text-xs text-gray-500">Admin Dashboard</p></div>
-            </div>
-        </div>
-
-        <div id="view-staff-login" class="hidden glass p-6 rounded-3xl space-y-4 shadow-xl border border-indigo-50">
-            <h2 class="text-xl font-bold text-center">Staff Assessment</h2>
-            <div class="flex gap-2 p-1 bg-gray-100 rounded-xl">
-                <button id="lang-en" onclick="setLang('en')" class="flex-1 py-2 rounded-lg text-xs font-bold bg-white shadow-sm">ENGLISH</button>
-                <button id="lang-ms" onclick="setLang('ms')" class="flex-1 py-2 rounded-lg text-xs font-bold text-gray-500">MALAY</button>
-            </div>
-            <input type="text" id="staff-name" class="w-full p-4 border rounded-xl bg-white" placeholder="Enter Full Name">
-            <select id="staff-outlet" class="w-full p-4 border rounded-xl bg-white"></select>
-            <select id="staff-topic-select" class="w-full p-4 border rounded-xl bg-indigo-50 font-bold text-indigo-700">
-                <option value="">Select Training Topic</option>
-            </select>
-            <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg">Start Quiz</button>
-            <button onclick="goHome()" class="w-full text-gray-400 text-sm py-2">Back to Menu</button>
-        </div>
-
-        <div id="view-quiz" class="hidden glass p-6 rounded-3xl shadow-xl space-y-4 border border-white">
-            <div class="flex justify-between items-center border-b pb-4">
-                <div class="text-xs font-black text-indigo-600 uppercase tracking-widest" id="quiz-progress">Q1 / 10</div>
-                <button id="quiz-back-home" onclick="goHome()" class="text-[10px] font-bold bg-gray-100 px-3 py-1 rounded-full">EXIT</button>
-            </div>
-            <h3 id="q-text" class="text-lg font-bold leading-tight min-h-[60px]"></h3>
-            <div id="q-options" class="grid grid-cols-1 gap-3"></div>
-            <div id="next-btn-container" class="hidden pt-4">
-                <button id="btn-next-step" onclick="nextQuestion()" class="w-full p-4 rounded-xl font-bold bg-gray-900 text-white shadow-xl transition-all">Next Question</button>
-            </div>
-        </div>
-
-        <div id="view-success" class="hidden glass p-8 rounded-3xl text-center space-y-4 shadow-2xl border-4 border-white">
-            <div class="text-6xl animate__animated animate__bounceIn">🏆</div>
-            <h2 class="text-2xl font-bold text-gray-800">Assessment Complete!</h2>
-            <div class="bg-indigo-50 p-6 rounded-2xl inline-block w-full">
-                <p id="final-score-text" class="text-4xl font-black text-indigo-700">0/0</p>
-                <p id="final-perc-text" class="text-lg font-bold text-indigo-400">0%</p>
-            </div>
-            <button onclick="goHome()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg">Done</button>
-        </div>
-
-        <div id="view-manager-login" class="hidden glass p-6 rounded-3xl space-y-4 max-w-sm mx-auto shadow-xl">
-             <h2 class="text-xl font-bold text-center">Manager Dashboard</h2>
-             <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-4 border rounded-xl"></select>
-             <select id="mgr-outlet" class="w-full p-4 border rounded-xl"></select>
-             <input type="password" id="mgr-pass" class="w-full p-4 border rounded-xl" placeholder="Pin Number">
-             <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg">Login</button>
-             <button onclick="goHome()" class="w-full text-gray-400 text-sm">Cancel</button>
-        </div>
-
-        <div id="view-manager-form" class="hidden space-y-4 pb-20">
-            <div class="flex justify-between items-center bg-white p-4 rounded-2xl border shadow-sm">
-                <button onclick="goHome()" class="text-indigo-600 font-bold text-sm">← Back</button>
-                <h2 class="font-bold text-gray-400 text-xs uppercase tracking-tighter">New Assessment Report</h2>
-            </div>
-            
-            <div class="glass p-6 rounded-3xl shadow-lg space-y-4 border border-indigo-50">
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-400 ml-1">TRAINING TOPIC</label>
-                        <select id="rep-topic" class="w-full p-3 border rounded-xl bg-gray-50 font-semibold" onchange="filterManagerStaff()"></select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-400 ml-1">STAFF LIST</label>
-                        <select id="rep-staff" class="w-full p-3 border rounded-xl bg-white font-bold text-indigo-700" onchange="updateStaffScoreDisplay()"></select>
-                    </div>
+    <div class="max-w-4xl mx-auto py-6">
+        <div id="view-main" class="animate__animated animate__fadeIn">
+            <header class="text-center mb-10">
+                <h1 class="text-4xl font-black text-indigo-600">RT PRO</h1>
+                <p class="text-slate-500 font-medium">Training Management System</p>
+            </header>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div onclick="showView('view-staff-login')" class="glass p-8 rounded-3xl text-center cursor-pointer hover:shadow-xl transition border-b-4 border-indigo-500">
+                    <div class="text-5xl mb-4">👤</div>
+                    <h2 class="text-xl font-bold">Staff</h2>
                 </div>
-
-                <div id="staff-quick-info" class="hidden p-4 bg-indigo-50 rounded-2xl flex justify-between items-center animate__animated animate__fadeIn">
-                    <div>
-                        <p class="text-[10px] text-indigo-400 font-bold">LATEST SCORE</p>
-                        <p id="display-score" class="text-xl font-black text-indigo-700">-</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] text-indigo-400 font-bold">COMPETENCY</p>
-                        <p id="display-level-badge" class="px-3 py-1 bg-white rounded-full text-xs font-black shadow-sm uppercase">-</p>
-                    </div>
+                <div onclick="showView('view-manager-login')" class="glass p-8 rounded-3xl text-center cursor-pointer hover:shadow-xl transition border-b-4 border-emerald-500">
+                    <div class="text-5xl mb-4">📊</div>
+                    <h2 class="text-xl font-bold">Manager</h2>
                 </div>
+                <div onclick="showView('view-supervisor-login')" class="glass p-8 rounded-3xl text-center cursor-pointer hover:shadow-xl transition border-b-4 border-purple-500">
+                    <div class="text-5xl mb-4">🔑</div>
+                    <h2 class="text-xl font-bold">Supervisor</h2>
+                </div>
+            </div>
+        </div>
 
-                <div class="hidden">
-                    <select id="rep-level">
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
+        <div id="view-staff-login" class="hidden animate__animated animate__fadeIn">
+            <div class="glass p-8 rounded-3xl shadow-xl">
+                <button onclick="goHome()" class="text-indigo-600 font-bold mb-6 flex items-center">← Back to Dashboard</button>
+                <h2 class="text-2xl font-bold mb-6">Staff Access</h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <button onclick="setLang('en')" id="lang-en" class="p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold">English</button>
+                        <button onclick="setLang('ms')" id="lang-ms" class="p-3 rounded-xl border-2 border-slate-200 font-bold">Malay</button>
+                    </div>
+                    <input type="text" id="staff-name" placeholder="Enter Full Name" class="w-full p-4 rounded-xl border border-slate-200 outline-none uppercase">
+                    <select id="staff-outlet" class="w-full p-4 rounded-xl border border-slate-200 outline-none">
+                        <option value="">Select Outlet</option>
                     </select>
+                    <select id="staff-topic" class="w-full p-4 rounded-xl border border-slate-200 outline-none">
+                        <option value="">Select Training Topic</option>
+                    </select>
+                    <button onclick="startQuiz()" class="w-full btn-grad p-4 rounded-xl font-bold text-lg shadow-lg">START QUIZ</button>
                 </div>
-
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Competency Comments</label>
-                        <textarea id="rep-comments" class="w-full p-3 border rounded-xl h-20 text-sm" placeholder="Detail the staff's performance..."></textarea>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Housebrand Focus Point</label>
-                        <textarea id="rep-housebrand" class="w-full p-3 border rounded-xl h-20 text-sm" placeholder="Focus products..."></textarea>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Performance Gaps</label>
-                        <textarea id="rep-gaps" class="w-full p-3 border rounded-xl h-20 text-sm" placeholder="Areas needing improvement..."></textarea>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase ml-1">Recommendations</label>
-                        <textarea id="rep-rec" class="w-full p-3 border rounded-xl h-20 text-sm" placeholder="Next steps for staff..."></textarea>
-                    </div>
-                </div>
-
-                <div class="bg-red-50 p-4 rounded-2xl border border-red-100">
-                    <h3 class="text-[10px] font-black text-red-400 uppercase mb-2">Quiz Gaps (Staff's Wrong Answers)</h3>
-                    <div id="mgr-wrong-list" class="space-y-2 text-[11px] leading-tight text-red-800"></div>
-                </div>
-
-                <button onclick="submitReport()" class="w-full btn-grad p-5 rounded-2xl font-bold shadow-xl animate__animated animate__pulse animate__infinite">Submit Report</button>
             </div>
         </div>
 
-        <div id="view-supervisor-login" class="hidden glass p-6 rounded-3xl max-w-sm mx-auto shadow-xl">
-            <h2 class="text-xl font-bold text-center">Supervisor Admin</h2>
-            <input type="password" id="sup-pass" class="w-full p-4 border rounded-xl" placeholder="Enter PIN">
-            <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg">View Dashboard</button>
-            <button onclick="goHome()" class="w-full text-gray-400 text-sm">Cancel</button>
+        <div id="view-quiz" class="hidden">
+            <div class="glass p-6 rounded-3xl shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <button id="quiz-back-home" onclick="goHome()" class="text-slate-400 font-bold">← Dashboard</button>
+                    <div id="quiz-progress" class="font-bold text-indigo-600">Q 1/18</div>
+                </div>
+                <div id="q-container" class="min-h-[300px]">
+                    <h3 id="q-text" class="text-xl font-bold mb-8"></h3>
+                    <div id="options-grid" class="grid gap-4"></div>
+                </div>
+                <div class="mt-8 flex justify-end">
+                    <button id="next-btn" onclick="nextQuestion()" class="hidden bg-slate-800 text-white px-8 py-3 rounded-xl font-bold">Next Question →</button>
+                    <button id="submit-quiz-btn" onclick="saveQuizResult()" class="hidden bg-emerald-600 text-white px-10 py-3 rounded-xl font-bold animate__animated animate__pulse animate__infinite">SUBMIT QUIZ 🚀</button>
+                </div>
+            </div>
         </div>
 
-        <div id="view-supervisor-dash" class="hidden space-y-4">
-            <div class="flex justify-between items-center">
-                <button onclick="goHome()" class="bg-white px-4 py-2 rounded-xl text-xs font-bold border shadow-sm">← Logout</button>
-                <button onclick="exportReportsCSV()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md">Export Report (CSV)</button>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="stat-card border-b-4 border-indigo-500">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase">Submissions</p>
-                    <p id="stat-total-quizzes" class="text-2xl font-black text-indigo-700">0</p>
-                </div>
-                <div class="stat-card border-b-4 border-green-500">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase">Avg Score</p>
-                    <p id="stat-avg-score" class="text-2xl font-black text-green-600">0%</p>
-                </div>
-                <div class="stat-card border-b-4 border-orange-500">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase">Outlets Active</p>
-                    <p id="stat-outlets" class="text-2xl font-black text-orange-600">0</p>
-                </div>
-                <div class="stat-card border-b-4 border-pink-500">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase">Reports Filed</p>
-                    <p id="stat-reports" class="text-2xl font-black text-pink-600">0</p>
+        <div id="view-manager-login" class="hidden">
+            <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto">
+                <button onclick="goHome()" class="text-indigo-600 font-bold mb-6">← Back</button>
+                <h2 class="text-2xl font-bold mb-6">Manager Login</h2>
+                <div class="space-y-4">
+                    <select id="mgr-select" onchange="updateMgrOutlets()" class="w-full p-4 rounded-xl border border-slate-200">
+                        <option value="">Select Manager</option>
+                    </select>
+                    <select id="mgr-outlet" class="w-full p-4 rounded-xl border border-slate-200">
+                        <option value="">Select Outlet</option>
+                    </select>
+                    <input type="password" id="mgr-pass" placeholder="Enter Password" class="w-full p-4 rounded-xl border border-slate-200">
+                    <button onclick="loginManager()" class="w-full btn-grad p-4 rounded-xl font-bold">ACCESS REPORT FORM</button>
                 </div>
             </div>
+        </div>
 
-            <div class="glass p-5 rounded-3xl border border-red-50 shadow-sm">
-                <h3 class="text-xs font-black text-red-500 uppercase mb-4 flex items-center gap-2">
-                    <span class="text-lg">⚠️</span> Training Gaps Analysis
-                </h3>
-                <div id="sup-training-gaps" class="space-y-3 max-h-60 overflow-y-auto pr-2"></div>
+        <div id="view-manager-form" class="hidden">
+            <div class="glass p-8 rounded-3xl shadow-xl">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-bold">Staff Assessment Report</h2>
+                    <button onclick="goHome()" class="bg-slate-100 p-2 rounded-lg font-bold">Logout</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 bg-slate-50 p-6 rounded-2xl">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase">Manager</p>
+                        <p id="disp-mgr-name" class="font-bold text-lg"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase">Outlet</p>
+                        <p id="disp-mgr-outlet" class="font-bold text-lg"></p>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Select Staff Member</label>
+                            <select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border border-slate-200 outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Training Topic</label>
+                            <select id="rep-topic" class="w-full p-4 rounded-xl border border-slate-200 outline-none"></select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Score</p>
+                            <p id="disp-staff-score" class="text-xl font-black text-indigo-600">--</p>
+                        </div>
+                        <div class="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Percentage</p>
+                            <p id="disp-staff-perc" class="text-xl font-black text-indigo-600">--</p>
+                        </div>
+                        <div id="disp-staff-level-box" class="p-4 bg-white rounded-xl shadow-sm border border-slate-100">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Level</p>
+                            <p id="disp-staff-level" class="text-xl font-black">--</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <textarea id="mgr-comment" placeholder="Competency Comments" class="w-full p-4 border rounded-xl h-24"></textarea>
+                        <textarea id="mgr-housebrand" placeholder="Housebrand Focus Points" class="w-full p-4 border rounded-xl h-24"></textarea>
+                        <textarea id="mgr-gaps" placeholder="Performance Gaps" class="w-full p-4 border rounded-xl h-24"></textarea>
+                        <textarea id="mgr-recom" placeholder="Recommendations" class="w-full p-4 border rounded-xl h-24"></textarea>
+                    </div>
+
+                    <div id="wrongs-container" class="p-4 bg-red-50 rounded-xl hidden">
+                        <h4 class="text-sm font-bold text-red-700 mb-2">Reviewing Wrong Answers:</h4>
+                        <div id="wrongs-list" class="text-xs text-red-600 space-y-1"></div>
+                    </div>
+
+                    <button onclick="submitManagerReport()" class="w-full btn-grad p-4 rounded-xl font-bold text-lg animate__animated animate__pulse">SUBMIT REPORT</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-supervisor-dash" class="hidden animate__animated animate__fadeIn">
+             <div class="flex justify-between items-center mb-6">
+                <button onclick="goHome()" class="bg-white p-2 px-6 rounded-xl shadow font-bold">← Home</button>
+                <button onclick="exportFullData()" class="bg-indigo-600 text-white p-2 px-6 rounded-xl shadow font-bold">Export Assessment + Wrongs (CSV)</button>
             </div>
 
-            <div class="bg-white p-5 rounded-3xl border shadow-sm overflow-hidden">
-                <h3 class="text-xs font-black text-gray-400 uppercase mb-4">Complete Assessment Logs</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="glass p-6 rounded-3xl text-center border-b-4 border-blue-500">
+                    <p class="text-xs font-black text-slate-400">TOTAL STAFF</p>
+                    <h3 id="stat-staff" class="text-3xl font-black">0</h3>
+                </div>
+                <div class="glass p-6 rounded-3xl text-center border-b-4 border-green-500">
+                    <p class="text-xs font-black text-slate-400">AVG SCORE</p>
+                    <h3 id="stat-avg" class="text-3xl font-black">0%</h3>
+                </div>
+                <div class="glass p-6 rounded-3xl text-center border-b-4 border-orange-500">
+                    <p class="text-xs font-black text-slate-400">OUTLETS</p>
+                    <h3 id="stat-outlets" class="text-3xl font-black">0</h3>
+                </div>
+                <div class="glass p-6 rounded-3xl text-center border-b-4 border-purple-500">
+                    <p class="text-xs font-black text-slate-400">REPORTS</p>
+                    <h3 id="stat-reports" class="text-3xl font-black">0</h3>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl shadow-xl mb-8">
+                <h3 class="text-xl font-bold mb-4">🚩 Training Gaps (Top Errors)</h3>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-[11px]">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-500">
-                                <th class="p-3 rounded-l-xl">DATE</th>
-                                <th class="p-3">STAFF</th>
-                                <th class="p-3">OUTLET</th>
-                                <th class="p-3">SCORE</th>
-                                <th class="p-3 rounded-r-xl">TOPIC</th>
-                            </tr>
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50">
+                            <tr><th class="p-3">Question Text</th><th class="p-3">Correct Ans</th><th class="p-3">Error Count</th></tr>
                         </thead>
-                        <tbody id="dash-table-body" class="divide-y divide-gray-50"></tbody>
+                        <tbody id="table-gaps"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl shadow-xl">
+                <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
+                    <h3 class="text-xl font-bold">Assessment Log</h3>
+                    <input type="text" id="log-search" onkeyup="filterLog()" placeholder="Search staff name..." class="p-2 border rounded-lg">
+                </div>
+                <div class="overflow-x-auto max-h-[500px]">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 sticky top-0">
+                            <tr><th class="p-3">Date</th><th class="p-3">Staff</th><th class="p-3">Outlet</th><th class="p-3">Score %</th><th class="p-3">Topic</th></tr>
+                        </thead>
+                        <tbody id="table-log"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-
-    </main>
+        
+        <div id="view-supervisor-login" class="hidden">
+            <div class="glass p-8 rounded-3xl shadow-xl max-w-md mx-auto">
+                <button onclick="goHome()" class="text-indigo-600 font-bold mb-6">← Back</button>
+                <h2 class="text-2xl font-bold mb-6">Supervisor Access</h2>
+                <input type="password" id="sup-pass" placeholder="Enter Admin Password" class="w-full p-4 rounded-xl border border-slate-200 outline-none mb-4">
+                <button onclick="loginSupervisor()" class="w-full btn-grad p-4 rounded-xl font-bold">ACCESS DASHBOARD</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbw35eling7AQXsj6nPnwC0kW4xjlgpUui3LVlBGB_6Lh7du2h0dFieva4GwXB0LqSY/exec"; 
         
-        const outlets = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
-        const managerMapping = {
-            "R1 - AMIRUL": ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"],
-            "R2 - HAZWANI": ["AJ", "BJR", "BP", "HQCT", "KB", "PK", "WM"],
-            "R3 - HARIS": ["B6", "BB", "CDR", "HL", "HQ", "KL"],
-            "R4 - RAIHAN": ["GB", "GBD", "JTH", "RJ", "ST", "TPOH"],
-            "R5 - ADNIN": ["JL", "JLD", "PP", "PSPD", "SMR"],
-            "R6 - NADHIRAH": ["KS", "MC", "MLR", "TM", "TMD", "TMT"],
-            "R7 - HASANUL": ["KBKK", "KBKS", "KBTC", "KBTJ", "PC", "PT"],
-            "R8 - HAFSHAM": ["GM", "PM", "SLS", "TPT", "KKR", "PPK", "CK", "RP"]
+        let allQuestions = [], allResults = [], allReports = [], allWrongAnswers = [];
+        let currentLang = 'en', quizIdx = 0, score = 0, currentQuizData = [], staffWrongs = [];
+
+        const outletList = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
+        const managerData = [
+            { id: "R1 - AMIRUL", outlets: ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"] },
+            { id: "R2 - HAZWANI", outlets: ["AJ", "BJR", "BP", "HQCT", "KB", "PK", "WM"] },
+            { id: "R3 - HARIS", outlets: ["B6", "BB", "CDR", "HL", "BG", "KL"] },
+            { id: "R4 - RAIHAN", outlets: ["GB", "GBD", "JTH", "RJ", "ST", "TPOH"] },
+            { id: "R5 - ADNIN", outlets: ["JL", "JLD", "PP", "PSPD", "SMR"] },
+            { id: "R6 - NADHIRAH", outlets: ["KS", "MC", "MLR", "TM", "TMD", "TMT"] },
+            { id: "R7 - HASANUL", outlets: ["KBKK", "KBKS", "KBTC", "KBTJ", "PC", "PT"] },
+            { id: "R8 - HAFSHAM", outlets: ["GM", "PM", "SLS", "TPT", "KKR", "PPK", "CK", "RP"] }
+        ];
+
+        window.onload = () => {
+            initDropdowns();
+            fetchData();
+            // Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log("SW failed", err));
+            }
         };
 
-        let rawQuestions = [], allResults = [], allReports = [], allWrongAnswers = [];
-        let currentUser = {}, currentQuizSet = [], quizIdx = 0, score = 0, wrongAnswersPayload = [];
-        let currentLang = 'en';
-
-        window.onload = () => { populateDropdowns(); fetchData(); };
-
-        // Requirement 11: Toggle Spinner
-        function toggleLoader(show, text = "Syncing...") {
-            const l = document.getElementById('loader-overlay');
-            document.getElementById('loader-text').innerText = text;
-            show ? l.classList.remove('hidden') : l.classList.add('hidden');
-        }
-
-        function populateDropdowns() {
-            const sO = document.getElementById('staff-outlet');
-            const mS = document.getElementById('mgr-select');
-            sO.add(new Option("Select Your Outlet", ""));
-            outlets.forEach(o => sO.add(new Option(o, o)));
-            mS.add(new Option("Select Your Name", ""));
-            Object.keys(managerMapping).forEach(m => mS.add(new Option(m, m)));
-        }
-
         async function fetchData() {
-            document.getElementById('nav-status').innerText = "Syncing...";
+            toggleLoader(true);
             try {
-                const res = await fetch(APPS_SCRIPT_URL);
+                const res = await fetch(GAS_URL);
                 const data = await res.json();
-                
-                // Requirement 13: Strengthened Mapping
-                rawQuestions = data.questions || [];
-                allResults = data.results || [];
-                allReports = data.reports || [];
-                allWrongAnswers = data.wrongAnswers || [];
-                
-                refreshTopics();
-                
-                document.getElementById('nav-status').innerText = "System Ready";
-                document.getElementById('nav-status').className = "text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded uppercase font-mono";
-            } catch (e) {
-                document.getElementById('nav-status').innerText = "Connection Error";
-            }
+                allQuestions = data.questions;
+                allResults = data.results;
+                allReports = data.reports;
+                allWrongAnswers = data.wrongAnswers;
+                populateManagerAssessData();
+            } catch (e) { console.error(e); }
+            toggleLoader(false);
         }
 
-        function refreshTopics() {
-            const ts = document.getElementById('staff-topic-select');
-            ts.innerHTML = '<option value="">Select Training Topic</option>';
-            // Requirement 9: Active topics only
-            const activeTopics = [...new Set(rawQuestions
-                .filter(q => (q.status || "").toLowerCase() === "active")
-                .map(q => q.topic))];
-            activeTopics.forEach(t => ts.add(new Option(t, t)));
-
-            // Requirement 5: Manager training topics
-            const mgrTopic = document.getElementById('rep-topic');
-            mgrTopic.innerHTML = '<option value="">All Topics</option>';
-            const resultTopics = [...new Set(allResults.map(r => r.Topic))];
-            resultTopics.forEach(t => mgrTopic.add(new Option(t, t)));
+        function initDropdowns() {
+            const staffO = document.getElementById('staff-outlet');
+            outletList.forEach(o => staffO.innerHTML += `<option value="${o}">${o}</option>`);
+            const mgrS = document.getElementById('mgr-select');
+            managerData.forEach(m => mgrS.innerHTML += `<option value="${m.id}">${m.id}</option>`);
         }
 
-        function showView(v) {
-            document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden'));
-            document.getElementById('view-' + v).classList.remove('hidden');
-            window.scrollTo(0,0);
+        function showView(id) {
+            document.querySelectorAll('.max-w-4xl > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
         }
-
-        function goHome() { showView('roles'); }
-
-        // Requirement 3: Language Toggle
+        function goHome() { showView('view-main'); }
+        function toggleLoader(s) { document.getElementById('loader').classList.toggle('hidden', !s); }
         function setLang(l) {
             currentLang = l;
-            document.getElementById('lang-en').className = l === 'en' ? "flex-1 py-2 rounded-lg text-xs font-bold bg-white shadow-sm" : "flex-1 py-2 rounded-lg text-xs font-bold text-gray-400";
-            document.getElementById('lang-ms').className = l === 'ms' ? "flex-1 py-2 rounded-lg text-xs font-bold bg-white shadow-sm" : "flex-1 py-2 rounded-lg text-xs font-bold text-gray-400";
+            document.getElementById('lang-en').className = l === 'en' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
+            document.getElementById('lang-ms').className = l === 'ms' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-600 font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
         }
 
-        // --- STAFF QUIZ LOGIC ---
+        // --- QUIZ LOGIC ---
         function startQuiz() {
-            const name = document.getElementById('staff-name').value.trim();
+            const name = document.getElementById('staff-name').value;
+            const topic = document.getElementById('staff-topic').value;
             const outlet = document.getElementById('staff-outlet').value;
-            const topic = document.getElementById('staff-topic-select').value;
-            if(!name || !outlet || !topic) return alert("Please fill all details");
+            if(!name || !topic || !outlet) return alert("Fill all details");
             
-            currentUser = { name: name.toUpperCase(), outlet, topic };
-            currentQuizSet = rawQuestions.filter(q => q.topic === topic);
-            quizIdx = 0; score = 0; wrongAnswersPayload = [];
+            currentQuizData = allQuestions.filter(q => q.topic == topic);
+            if(currentQuizData.length == 0) return alert("No questions found for this topic");
             
-            showView('quiz');
+            quizIdx = 0; score = 0; staffWrongs = [];
             renderQuestion();
+            showView('view-quiz');
         }
 
         function renderQuestion() {
-            const q = currentQuizSet[quizIdx];
-            // Requirement 7: Back button only on Q1
-            document.getElementById('quiz-back-home').style.display = (quizIdx === 0) ? "block" : "none";
-            document.getElementById('quiz-progress').innerText = `Question ${quizIdx + 1} / ${currentQuizSet.length}`;
+            const q = currentQuizData[quizIdx];
+            document.getElementById('quiz-back-home').classList.toggle('hidden', quizIdx > 0);
+            document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
+            document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : q.question_ms;
             
-            // Requirement 3 & 13: Fixed mapping (question_en, question_ms)
-            document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
-            
-            const container = document.getElementById('q-options');
-            container.innerHTML = '';
-            document.getElementById('next-btn-container').classList.add('hidden');
-
-            const opts = [
-                { id: '1', text: currentLang === 'en' ? q.opt1_en : (q.opt1_ms || q.opt1_en) },
-                { id: '2', text: currentLang === 'en' ? q.opt2_en : (q.opt2_ms || q.opt2_en) },
-                { id: '3', text: currentLang === 'en' ? q.opt3_en : (q.opt3_ms || q.opt3_en) },
-                { id: '4', text: currentLang === 'en' ? q.opt4_en : (q.opt4_ms || q.opt4_en) }
-            ];
-
-            opts.forEach(opt => {
-                if(opt.text) {
-                    const b = document.createElement('button');
-                    b.className = "p-4 text-left border-2 border-gray-100 rounded-2xl font-semibold bg-white transition-all active:scale-95";
-                    b.innerText = opt.text;
-                    b.onclick = () => handleAnswer(b, opt.id, q);
-                    container.appendChild(b);
-                }
-            });
-            
-            // Requirement 9: Animation on last question
-            if(quizIdx === currentQuizSet.length - 1) {
-                const nb = document.getElementById('btn-next-step');
-                nb.innerText = "Submit Assessment";
-                nb.className = "w-full bg-indigo-600 text-white p-5 rounded-2xl font-bold animate__animated animate__pulse animate__infinite";
-            } else {
-                const nb = document.getElementById('btn-next-step');
-                nb.innerText = "Next Question";
-                nb.className = "w-full bg-gray-900 text-white p-5 rounded-2xl font-bold";
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            for(let i=1; i<=4; i++) {
+                const optText = currentLang === 'en' ? q[`opt${i}_en`] : q[`opt${i}_ms`];
+                if(!optText || optText === "") continue;
+                const btn = document.createElement('button');
+                btn.className = "opt-btn p-4 rounded-xl text-left font-medium bg-white";
+                btn.innerText = optText;
+                btn.onclick = () => handleChoice(i, btn, q);
+                grid.appendChild(btn);
             }
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('submit-quiz-btn').classList.add('hidden');
         }
 
-        function handleAnswer(btn, choice, q) {
-            // Requirement 13: Correct is often 1, 2, 3, or 4 in sheet
-            const correctStr = String(q.correct);
-            const isCorrect = String(choice) === correctStr;
-            
-            const btns = document.querySelectorAll('#q-options button');
-            btns.forEach(b => b.disabled = true);
-
+        function handleChoice(idx, btn, q) {
+            document.querySelectorAll('.opt-btn').forEach(b => b.onclick = null);
+            const isCorrect = idx == q.correct;
             if(isCorrect) {
-                btn.classList.add('answer-correct', 'animate__animated', 'animate__tada');
+                btn.classList.add('opt-correct');
                 score++;
             } else {
-                btn.classList.add('answer-wrong', 'animate__animated', 'animate__shakeX');
-                // Requirement 9: Show correct answer
-                const correctIdx = parseInt(correctStr) - 1;
-                if(btns[correctIdx]) btns[correctIdx].classList.add('answer-correct');
-                
-                wrongAnswersPayload.push({
-                    qText: q.question_en,
-                    userWrongChoice: btn.innerText,
-                    correctAnswerText: q[`opt${correctStr}_en`]
+                btn.classList.add('opt-wrong');
+                document.querySelectorAll('.opt-btn')[q.correct - 1].classList.add('opt-correct');
+                staffWrongs.push({
+                    qId: q.topic + "_" + quizIdx,
+                    qText: currentLang === 'en' ? q.question_en : q.question_ms,
+                    userChoice: currentLang === 'en' ? q[`opt${idx}_en`] : q[`opt${idx}_ms`],
+                    correctText: currentLang === 'en' ? q[`opt${q.correct}_en`] : q[`opt${q.correct}_ms`]
                 });
             }
-            document.getElementById('next-btn-container').classList.remove('hidden');
+            if(quizIdx < currentQuizData.length - 1) document.getElementById('next-btn').classList.remove('hidden');
+            else document.getElementById('submit-quiz-btn').classList.remove('hidden');
         }
 
-        function nextQuestion() {
-            quizIdx++;
-            if(quizIdx < currentQuizSet.length) renderQuestion();
-            else finishQuiz();
-        }
+        function nextQuestion() { quizIdx++; renderQuestion(); }
 
-        async function finishQuiz() {
-            toggleLoader(true, "Finalizing Score...");
-            const percNum = (score / currentQuizSet.length) * 100;
-            const percStr = percNum.toFixed(0) + "%";
-            
+        async function saveQuizResult() {
+            toggleLoader(true);
             const payload = {
                 action: 'save_result',
-                name: currentUser.name,
-                outlet: currentUser.outlet,
-                score: `${score}/${currentQuizSet.length}`,
-                perc: percStr,
-                topic: currentUser.topic,
-                wrongAnswers: wrongAnswersPayload
+                name: document.getElementById('staff-name').value.toUpperCase(),
+                outlet: document.getElementById('staff-outlet').value,
+                topic: document.getElementById('staff-topic').value,
+                score: `${score}/${currentQuizData.length}`,
+                perc: Math.round((score/currentQuizData.length)*100) + "%",
+                wrongAnswers: staffWrongs
             };
-
-            try {
-                await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
-                document.getElementById('final-score-text').innerText = `${score}/${currentQuizSet.length}`;
-                document.getElementById('final-perc-text').innerText = percStr;
-                showView('success');
-            } catch (e) { alert("Submission error, but your score was " + percStr); }
-            toggleLoader(false);
+            await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+            alert("Quiz Submitted!");
+            location.reload();
         }
 
         // --- MANAGER LOGIC ---
+        function loginManager() {
+            if(document.getElementById('mgr-pass').value === "1234") showView('view-manager-form');
+            else alert("Wrong password");
+        }
+
         function updateMgrOutlets() {
-            const m = document.getElementById('mgr-select').value;
-            const o = document.getElementById('mgr-outlet');
-            o.innerHTML = '<option value="">Select Outlet</option>';
-            if(m) managerMapping[m].forEach(item => o.add(new Option(item, item)));
+            const m = managerData.find(x => x.id === document.getElementById('mgr-select').value);
+            const outS = document.getElementById('mgr-outlet');
+            outS.innerHTML = '<option value="">Select Outlet</option>';
+            if(m) m.outlets.forEach(o => outS.innerHTML += `<option value="${o}">${o}</option>`);
         }
 
-        async function loginManager() {
-            if(document.getElementById('mgr-pass').value !== "1234") return alert("Wrong PIN");
-            toggleLoader(true, "Authenticating...");
-            await fetchData();
-            showView('manager-form');
-            toggleLoader(false);
-        }
-
-        function filterManagerStaff() {
-            const topic = document.getElementById('rep-topic').value;
-            const outlet = document.getElementById('mgr-outlet').value;
-            
-            let filtered = allResults.filter(r => (r.Outlet||r.outlet) === outlet);
-            if(topic) filtered = filtered.filter(r => r.Topic === topic);
-            
-            const sS = document.getElementById('rep-staff');
-            sS.innerHTML = '<option value="">-- Select Staff --</option>';
-            filtered.forEach(r => {
-                const name = r.Name || r.staffName;
-                sS.add(new Option(`${name} (${r.Percentage})`, name));
+        function populateManagerAssessData() {
+            const topics = [...new Set(allQuestions.map(q => q.topic))];
+            const ts = document.getElementById('rep-topic');
+            const sts = document.getElementById('rep-staff');
+            const stsLogin = document.getElementById('staff-topic');
+            ts.innerHTML = '<option value="">Select Topic</option>';
+            stsLogin.innerHTML = '<option value="">Select Training Topic</option>';
+            topics.forEach(t => { 
+                ts.innerHTML += `<option>${t}</option>`;
+                stsLogin.innerHTML += `<option>${t}</option>`;
             });
+            sts.innerHTML = '<option value="">Select Staff</option>';
+            allResults.forEach(r => sts.innerHTML += `<option value="${r.Name}">${r.Name} (${r.Topic})</option>`);
         }
 
-        function updateStaffScoreDisplay() {
+        function onStaffSelect() {
             const name = document.getElementById('rep-staff').value;
-            const list = document.getElementById('mgr-wrong-list');
-            const info = document.getElementById('staff-quick-info');
-            list.innerHTML = ''; info.classList.add('hidden');
-            if(!name) return;
-
-            const res = allResults.find(r => (r.Name||r.staffName) === name);
+            const res = allResults.find(r => r.Name === name);
             if(res) {
-                info.classList.remove('hidden');
-                document.getElementById('display-score').innerText = res.Percentage;
+                document.getElementById('disp-staff-score').innerText = res.Score;
+                document.getElementById('disp-staff-perc').innerText = res.Percentage;
+                const p = parseInt(res.Percentage);
+                let lvl = "LOW", col = "text-red-600";
+                if(p >= 85) { lvl = "HIGH"; col = "text-emerald-600"; }
+                else if(p >= 71) { lvl = "MEDIUM"; col = "text-orange-500"; }
+                const lEl = document.getElementById('disp-staff-level');
+                lEl.innerText = lvl; lEl.className = "text-xl font-black " + col;
                 
-                // Requirement 5: Competency Match Logic
-                const pVal = parseInt(res.Percentage);
-                const badge = document.getElementById('display-level-badge');
-                const levelSel = document.getElementById('rep-level');
-                
-                if(pVal < 71) {
-                    badge.innerText = "Low"; badge.className = "px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-black shadow-sm uppercase";
-                    levelSel.value = "Low";
-                } else if(pVal < 85) {
-                    badge.innerText = "Medium"; badge.className = "px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-black shadow-sm uppercase";
-                    levelSel.value = "Medium";
-                } else {
-                    badge.innerText = "High"; badge.className = "px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-black shadow-sm uppercase";
-                    levelSel.value = "High";
-                }
+                const wrongs = allWrongAnswers.filter(w => w["Staff Name"] === name);
+                const wCont = document.getElementById('wrongs-container');
+                const wList = document.getElementById('wrongs-list');
+                if(wrongs.length > 0) {
+                    wCont.classList.remove('hidden');
+                    wList.innerHTML = wrongs.map(w => `• ${w["Question Text"]} (Ans: ${w["Correct Answer"]})`).join('<br>');
+                } else wCont.classList.add('hidden');
             }
-
-            // Requirement 12: Staff wrong answers at bottom
-            const wrongs = allWrongAnswers.filter(w => (w["Staff Name"]||w.staffName) === name);
-            if(wrongs.length === 0) list.innerHTML = '<p class="text-green-500 italic">Excellent! No quiz gaps found.</p>';
-            else wrongs.forEach(w => {
-                list.innerHTML += `<div class="p-2 bg-white rounded-xl border border-red-100 shadow-sm">
-                    <b>Q:</b> ${w["Question Text"]}<br><span class="text-red-500">Picked: ${w["Wrong Choice"]}</span> | <span class="text-green-600">Correct: ${w["Correct Answer"]}</span>
-                </div>`;
-            });
         }
 
-        async function submitReport() {
-            const name = document.getElementById('rep-staff').value;
-            if(!name) return alert("Please select a staff member first");
-            const res = allResults.find(r => (r.Name||r.staffName) === name);
-
+        async function submitManagerReport() {
+            toggleLoader(true);
             const payload = {
                 action: 'save_report',
                 manager: document.getElementById('mgr-select').value,
                 outlet: document.getElementById('mgr-outlet').value,
-                staffName: name,
-                quizScore: res.Percentage,
-                trainingTitle: res.Topic,
-                skillLevel: document.getElementById('rep-level').value,
-                competencyComments: document.getElementById('rep-comments').value,
-                housebrandFocus: document.getElementById('rep-housebrand').value,
-                performanceGaps: document.getElementById('rep-gaps').value,
-                recommendations: document.getElementById('rep-rec').value
+                staffName: document.getElementById('rep-staff').value,
+                quizScore: document.getElementById('disp-staff-perc').innerText,
+                trainingTitle: document.getElementById('rep-topic').value,
+                skillLevel: document.getElementById('disp-staff-level').innerText,
+                competencyComments: document.getElementById('mgr-comment').value,
+                housebrandFocus: document.getElementById('mgr-housebrand').value,
+                performanceGaps: document.getElementById('mgr-gaps').value,
+                recommendations: document.getElementById('mgr-recom').value
             };
-
-            toggleLoader(true, "Submitting Report...");
-            try {
-                await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
-                alert("Report Successfully Submitted!");
-                goHome();
-            } catch(e) { alert("Error saving report."); }
-            toggleLoader(false);
+            await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+            alert("Report Submitted!");
+            location.reload();
         }
 
         // --- SUPERVISOR LOGIC ---
         function loginSupervisor() {
-            if(document.getElementById('sup-pass').value !== "admin") return alert("Invalid PIN");
-            showView('supervisor-dash');
-            renderSupervisorDash();
+            if(document.getElementById('sup-pass').value === "admin") {
+                renderSupervisorStats();
+                showView('view-supervisor-dash');
+            } else alert("Denied");
         }
 
-        function renderSupervisorDash() {
-            const body = document.getElementById('dash-table-body');
-            const gapContainer = document.getElementById('sup-training-gaps');
-            body.innerHTML = '';
-            gapContainer.innerHTML = '';
-            
-            // Stats
-            const totalQuizzes = allResults.length;
-            const totalReports = allReports.length;
-            const uniqueOutlets = [...new Set(allResults.map(r => r.Outlet||r.outlet))].length;
-            
-            let sumPerc = 0;
-            allResults.forEach(r => {
-                const val = parseInt(r.Percentage) || 0;
-                sumPerc += val;
-                // Requirement 1: Percentage in log
-                body.innerHTML += `<tr class="border-b border-gray-50">
-                    <td class="p-3">${(r.Timestamp || "").split('T')[0]}</td>
-                    <td class="p-3 font-bold">${r.Name||r.staffName}</td>
-                    <td class="p-3"><span class="bg-gray-100 px-2 py-0.5 rounded">${r.Outlet||r.outlet}</span></td>
-                    <td class="p-3 font-black text-indigo-600">${val}%</td>
-                    <td class="p-3">${r.Topic}</td>
-                </tr>`;
-            });
+        function renderSupervisorStats() {
+            document.getElementById('stat-staff').innerText = allResults.length;
+            document.getElementById('stat-reports').innerText = allReports.length;
+            document.getElementById('stat-outlets').innerText = [...new Set(allResults.map(r => r.Outlet))].length;
+            const avg = allResults.length ? Math.round(allResults.reduce((a,b)=>a+parseInt(b.Percentage),0)/allResults.length) : 0;
+            document.getElementById('stat-avg').innerText = avg + "%";
 
-            document.getElementById('stat-total-quizzes').innerText = totalQuizzes;
-            document.getElementById('stat-avg-score').innerText = totalQuizzes > 0 ? (sumPerc/totalQuizzes).toFixed(0) + "%" : "0%";
-            document.getElementById('stat-outlets').innerText = uniqueOutlets;
-            document.getElementById('stat-reports').innerText = totalReports;
+            document.getElementById('table-log').innerHTML = allResults.map(r => `
+                <tr class="border-b">
+                    <td class="p-3 text-slate-400">${new Date(r.Timestamp).toLocaleDateString()}</td>
+                    <td class="p-3 font-bold">${r.Name}</td>
+                    <td class="p-3">${r.Outlet}</td>
+                    <td class="p-3 text-indigo-600 font-bold">${r.Percentage}</td>
+                    <td class="p-3 text-xs">${r.Topic}</td>
+                </tr>
+            `).join('');
 
-            // Requirement 8: Training Gaps Summary
-            const gapSummary = {};
+            const gaps = {};
             allWrongAnswers.forEach(w => {
-                const q = w["Question Text"];
-                if(!gapSummary[q]) gapSummary[q] = { count: 0, correct: w["Correct Answer"] };
-                gapSummary[q].count++;
+                gaps[w["Question Text"]] = (gaps[w["Question Text"]] || 0) + 1;
             });
-
-            const sortedGaps = Object.entries(gapSummary).sort((a,b) => b[1].count - a[1].count);
-            if(sortedGaps.length === 0) gapContainer.innerHTML = '<p class="text-gray-400 italic text-center py-4">No gaps detected.</p>';
-            sortedGaps.forEach(([qText, data]) => {
-                gapContainer.innerHTML += `
-                    <div class="p-3 bg-white rounded-xl border-l-4 border-red-400 shadow-sm text-[11px]">
-                        <div class="flex justify-between font-black text-red-500 mb-1">
-                            <span>MISSED BY ${data.count} STAFF</span>
-                        </div>
-                        <p class="font-bold text-gray-800 mb-1">${qText}</p>
-                        <p class="text-green-600 font-bold">Correct: ${data.correct}</p>
-                    </div>`;
-            });
+            document.getElementById('table-gaps').innerHTML = Object.entries(gaps).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([q, count]) => `
+                <tr class="border-b">
+                    <td class="p-3 font-medium">${q}</td>
+                    <td class="p-3 text-emerald-600 font-bold">See Master</td>
+                    <td class="p-3 font-black text-red-500">${count} Errors</td>
+                </tr>
+            `).join('');
         }
 
-        // Requirement 2 & 10: Export CSV with multiple columns for wrongs
-        function exportReportsCSV() {
-            if(allReports.length === 0) return alert("No reports to export.");
-            
-            let maxWrongs = 0;
-            allReports.forEach(r => {
-                const wrongs = allWrongAnswers.filter(w => (w["Staff Name"]||w.staffName) === r["Staff Name"]);
-                if(wrongs.length > maxWrongs) maxWrongs = wrongs.length;
+        function exportFullData() {
+            let csv = "Timestamp,Staff,Outlet,Topic,Score,Percentage,Wrong_Answers\n";
+            allResults.forEach(r => {
+                const wrongs = allWrongAnswers.filter(w => w["Staff Name"] === r.Name).map(w => w["Question Text"]).join(" | ");
+                csv += `"${r.Timestamp}","${r.Name}","${r.Outlet}","${r.Topic}","${r.Score}","${r.Percentage}","${wrongs}"\n`;
             });
-
-            const headers = ["Timestamp", "Manager", "Outlet", "Staff", "Score", "Topic", "Skill", "Comments", "Housebrand", "Gaps", "Recommendations"];
-            for(let i=1; i<=maxWrongs; i++) headers.push(`Wrong_Q${i}_Details`);
-            
-            let csv = headers.join(",") + "\n";
-            allReports.forEach(r => {
-                const wrongs = allWrongAnswers.filter(w => (w["Staff Name"]||w.staffName) === r["Staff Name"] && (w.Topic||w.topic) === r["Training Title"]);
-                const row = [
-                    r.Timestamp, r.Manager, r.Outlet, r["Staff Name"], r["Quiz Score"], r["Training Title"], r["Skill Level"],
-                    `"${(r["Competency Comments"]||"").replace(/"/g,'""')}"`,
-                    `"${(r["Housebrand Focus"]||"").replace(/"/g,'""')}"`,
-                    `"${(r["Performance Gaps"]||"").replace(/"/g,'""')}"`,
-                    `"${(r["Recommendations"]||"").replace(/"/g,'""')}"`
-                ];
-                
-                // Requirement 10: Put each wrong in different column
-                wrongs.forEach(w => {
-                    row.push(`"Q: ${w["Question Text"]} | User: ${w["Wrong Choice"]} | Correct: ${w["Correct Answer"]}"`);
-                });
-                csv += row.join(",") + "\n";
-            });
-
             const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
+            const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `RT_Full_Report_${new Date().toISOString().split('T')[0]}.csv`;
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'RT_Pro_Full_Data.csv');
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
         }
     </script>
 </body>
