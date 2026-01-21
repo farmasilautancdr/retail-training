@@ -164,7 +164,10 @@
         <div id="view-manager-form" class="hidden">
             <div class="glass p-6 rounded-3xl shadow-xl space-y-6">
                 <div class="flex justify-between items-center border-b pb-4">
-                    <h2 class="text-xl font-bold text-indigo-600 leading-tight">Region Assessment</h2>
+                    <div>
+                        <h2 class="text-xl font-bold text-indigo-600 leading-tight">Region Assessment</h2>
+                        <p id="edit-indicator" class="text-[10px] text-orange-500 font-bold hidden uppercase tracking-widest">● Modifying Existing Report</p>
+                    </div>
                     <button onclick="location.reload()" class="text-red-500 font-bold text-sm">Logout</button>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl grid grid-cols-2 text-xs font-bold">
@@ -229,7 +232,7 @@
         window.onbeforeunload = function() { if(isQuizRunning && !isPreviewMode) { autoSubmitQuiz(); return "Unsaved Progress."; } };
 
         async function fetchData() {
-            setLoader(true, "Synchronizing Cloud...");
+            setLoader(true, "Synchronizing...");
             try {
                 const res = await fetch(GAS_URL);
                 const data = await res.json();
@@ -253,13 +256,10 @@
 
         function populateGlobalData() {
             const activeTopics = [...new Set(allQuestions.filter(q => (q.status || q.Status || q.STATUS) !== "Inactive").map(q => q.topic))].filter(t => t);
-            
-            // Populate Staff Quiz List
             const staffTopic = document.getElementById('staff-topic');
             staffTopic.innerHTML = '<option value="">Select Training Topic</option>';
             activeTopics.forEach(t => staffTopic.innerHTML += `<option value="${t}">${t}</option>`);
             
-            // Populate Supervisor Preview Tool
             const supTopic = document.getElementById('sup-preview-topic');
             supTopic.innerHTML = '<option value="">Preview Topic...</option>';
             activeTopics.forEach(t => supTopic.innerHTML += `<option value="${t}">${t}</option>`);
@@ -271,23 +271,12 @@
             });
         }
 
-        // --- PREVIEW FEATURE ---
         function startPreview() {
             const t = document.getElementById('sup-preview-topic').value;
-            if(!t) return alert("Select a topic to preview");
-            
+            if(!t) return alert("Select a topic");
             currentQuizData = allQuestions.filter(q => q.topic == t);
-            quizIdx = 0;
-            score = 0;
-            isPreviewMode = true;
-            isQuizRunning = false;
-            
-            renderQuestion();
-            showView('view-quiz');
-            
-            // Adjust buttons for preview
-            document.getElementById('submit-quiz-btn').classList.add('hidden');
-            document.getElementById('finish-preview-btn').classList.add('hidden');
+            quizIdx = 0; score = 0; isPreviewMode = true; isQuizRunning = false;
+            renderQuestion(); showView('view-quiz');
         }
 
         function setLoader(show, text = "Processing...") {
@@ -303,7 +292,6 @@
         }
 
         function goHome() { isQuizRunning = false; isPreviewMode = false; showView('view-main'); }
-        
         function setLang(l) {
             currentLang = l;
             document.getElementById('lang-en').className = l === 'en' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
@@ -321,23 +309,15 @@
             renderQuestion(); showView('view-quiz');
         }
 
-        // --- FIXED TRUE/FALSE LOGIC ---
-        
         function renderQuestion() {
             const q = currentQuizData[quizIdx];
             document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
             document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
             const grid = document.getElementById('options-grid');
             grid.innerHTML = '';
-            
-            // Scan for options 1-4
             for(let i=1; i<=4; i++) {
-                let optEn = q[`opt${i}_en`];
-                let optMs = q[`opt${i}_ms`];
-                let txt = currentLang === 'en' ? optEn : (optMs || optEn);
-                
-                // FIXED: Explicitly check for content to avoid "1 option" bug
-                if (txt !== undefined && txt !== null && txt.toString().trim() !== "" && txt.toString().toLowerCase() !== "undefined") {
+                let txt = currentLang === 'en' ? q[`opt${i}_en`] : (q[`opt${i}_ms`] || q[`opt${i}_en`]);
+                if (txt && txt.toString().trim() !== "" && txt.toString().toLowerCase() !== "undefined") {
                     const b = document.createElement('button');
                     b.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
                     b.innerText = txt;
@@ -354,11 +334,8 @@
             const buttons = document.querySelectorAll('.opt-btn');
             buttons.forEach(b => b.onclick = null);
             const correctIdx = parseInt(q.correct);
-            
-            if (idx === correctIdx) { 
-                btn.classList.add('opt-correct'); 
-                score++; 
-            } else {
+            if (idx === correctIdx) { btn.classList.add('opt-correct'); score++; } 
+            else {
                 btn.classList.add('opt-wrong');
                 buttons.forEach((b, i) => { if (i === correctIdx) b.classList.add('opt-correct'); });
                 if(!isPreviewMode) {
@@ -369,22 +346,14 @@
                     });
                 }
             }
-            
-            if (quizIdx < currentQuizData.length - 1) {
-                document.getElementById('next-btn').classList.remove('hidden');
-            } else {
-                if(isPreviewMode) {
-                    document.getElementById('finish-preview-btn').classList.remove('hidden');
-                } else {
-                    document.getElementById('submit-quiz-btn').classList.remove('hidden');
-                }
-            }
+            if (quizIdx < currentQuizData.length - 1) document.getElementById('next-btn').classList.remove('hidden');
+            else isPreviewMode ? document.getElementById('finish-preview-btn').classList.remove('hidden') : document.getElementById('submit-quiz-btn').classList.remove('hidden');
         }
 
         function nextQuestion() { quizIdx++; renderQuestion(); }
 
         async function saveQuizResult() {
-            isQuizRunning = false; setLoader(true, "Saving Result...");
+            isQuizRunning = false; setLoader(true, "Saving...");
             const p = { action: 'save_result', name: document.getElementById('staff-name').value.toUpperCase().trim(), outlet: document.getElementById('staff-outlet').value, topic: document.getElementById('staff-topic').value, score: `${score}/${currentQuizData.length}`, perc: Math.round((score/currentQuizData.length) * 100) + "%", wrongAnswers: staffWrongs };
             try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) }); alert("Done!"); location.reload(); }
             catch(e) { alert("Sync Error"); setLoader(false); }
@@ -425,10 +394,21 @@
             });
         }
 
+        // --- MANAGER DASHBOARD LOGIC (EDIT FEATURE) ---
+        
         function onStaffSelect() {
             const n = document.getElementById('rep-staff').value;
             const o = document.getElementById('disp-mgr-outlet').innerText;
+            const m = document.getElementById('disp-mgr-name').innerText;
             const r = allResults.find(x => x.Name === n && x.Outlet === o);
+            
+            // Reset fields
+            document.getElementById('mgr-comment').value = "";
+            document.getElementById('mgr-housebrand').value = "";
+            document.getElementById('mgr-gaps').value = "";
+            document.getElementById('mgr-recom').value = "";
+            document.getElementById('edit-indicator').classList.add('hidden');
+
             if(r) {
                 document.getElementById('disp-staff-score').innerText = r.Score;
                 document.getElementById('disp-staff-perc').innerText = formatToPercent(r.Percentage);
@@ -437,8 +417,22 @@
                 let lvl = "LOW", col = "#ef4444";
                 if(p >= 85) { lvl = "HIGH"; col = "#10b981"; }
                 else if(p >= 71) { lvl = "MEDIUM"; col = "#f59e0b"; }
-                document.getElementById('disp-staff-level').innerText = lvl; 
+                document.getElementById('disp-staff-level').innerText = lvl; 
                 document.getElementById('disp-staff-level-box').style.backgroundColor = col;
+
+                // Load existing data if report exists
+                const existing = allReports.find(x => x["Staff Name"].trim().toUpperCase() === n.trim().toUpperCase() && x["Training Title"] === r.Topic);
+                if (existing) {
+                    if (existing["Manager"] === m) {
+                        document.getElementById('mgr-comment').value = existing["Competency Comments"] || "";
+                        document.getElementById('mgr-housebrand').value = existing["Housebrand Focus"] || "";
+                        document.getElementById('mgr-gaps').value = existing["Performance Gaps"] || "";
+                        document.getElementById('mgr-recom').value = existing["Recommendations"] || "";
+                        document.getElementById('edit-indicator').classList.remove('hidden');
+                    } else {
+                        alert(`Note: ${existing["Manager"]} has already submitted a report for this session. You cannot edit it.`);
+                    }
+                }
 
                 const wr = allWrongAnswers.filter(w => w["Staff Name"] === n && w["Topic"] === r.Topic);
                 const cont = document.getElementById('wrongs-container');
@@ -449,11 +443,26 @@
             }
         }
 
+        // --- SUBMIT WITH USER WARNINGS ---
         async function submitManagerReport() {
             if(!document.getElementById('rep-date').value) return alert("Select date");
-            setLoader(true, "Uploading...");
+            setLoader(true, "Processing...");
             const p = { action: 'save_report', manager: document.getElementById('disp-mgr-name').innerText, outlet: document.getElementById('disp-mgr-outlet').innerText, staffName: document.getElementById('rep-staff').value, staffScore: document.getElementById('disp-staff-perc').innerText, trainTitle: document.getElementById('rep-topic').value, trainingDate: document.getElementById('rep-date').value, level: document.getElementById('disp-staff-level').innerText, comments: document.getElementById('mgr-comment').value, focus: document.getElementById('mgr-housebrand').value, gaps: document.getElementById('mgr-gaps').value, rec: document.getElementById('mgr-recom').value };
-            try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) }); alert("Report Saved!"); await fetchData(); } catch(e) { alert("Error"); }
+            
+            try { 
+                const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
+                const result = await res.text();
+                
+                if (result === "AUTH_ERROR") {
+                    alert("❌ ACCESS DENIED: Only the original author can edit this report.");
+                } else if (result === "UPDATE_SUCCESS") {
+                    alert("📝 SUCCESS: Existing report has been updated.");
+                    fetchData(); showView('view-main');
+                } else {
+                    alert("✅ SUCCESS: New report saved.");
+                    fetchData(); showView('view-main');
+                }
+            } catch(e) { alert("Network Error"); }
             setLoader(false);
         }
 
@@ -470,9 +479,7 @@
             document.getElementById('stat-outlets').innerText = [...new Set(allResults.map(r => r.Outlet))].length;
             const avg = allResults.length ? Math.round(allResults.reduce((a,b) => a + parseInt(formatToPercent(b.Percentage)), 0) / allResults.length) : 0;
             document.getElementById('stat-avg').innerText = avg + "%";
-            
             renderReportsTable(allReports.sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp)).slice(0, 20));
-
             const g = {};
             allWrongAnswers.forEach(w => {
                 const q = w["Question Text"];
@@ -490,50 +497,35 @@
 
         function filterReports() {
             const query = document.getElementById('report-search').value.toUpperCase().trim();
-            const filtered = allReports.filter(r => 
-                (r["Staff Name"] && r["Staff Name"].toUpperCase().includes(query)) || 
-                (r["Outlet"] && r["Outlet"].toUpperCase().includes(query))
-            );
+            const filtered = allReports.filter(r => (r["Staff Name"] && r["Staff Name"].toUpperCase().includes(query)) || (r["Outlet"] && r["Outlet"].toUpperCase().includes(query)));
             renderReportsTable(filtered.slice(0, 20));
         }
 
         function exportComprehensiveCSV() {
             if (allResults.length === 0) return alert("No data available.");
             const wrap = (t) => `"${(t || "").toString().replace(/"/g, "'").trim()}"`;
-            
             let maxErrors = 0;
             allResults.forEach(r => {
                 const errs = allWrongAnswers.filter(w => w["Staff Name"].trim().toUpperCase() === r.Name.trim().toUpperCase() && w["Topic"] === r.Topic);
                 if (errs.length > maxErrors) maxErrors = errs.length;
             });
-
             let csv = "Timestamp,Outlet,Staff_Name,Topic,Quiz_Score,Accuracy,Manager_Level,Comments,Housebrand_Focus,Performance_Gaps,Recommendations,Manager_Name";
-            for (let i = 1; i <= maxErrors; i++) {
-                csv += `,Question_${i},Choice_${i},Correct_${i}`;
-            }
+            for (let i = 1; i <= maxErrors; i++) csv += `,Question_${i},Choice_${i},Correct_${i}`;
             csv += "\n";
-
             allResults.forEach(r => {
                 const sName = r.Name.trim().toUpperCase();
                 const sTopic = r.Topic.trim();
                 const rep = allReports.find(x => x["Staff Name"].trim().toUpperCase() === sName && x["Training Title"].trim() === sTopic);
                 const errors = allWrongAnswers.filter(w => w["Staff Name"].trim().toUpperCase() === sName && w["Topic"].trim() === sTopic);
-                
-                let row = [
-                    wrap(r.Timestamp), wrap(r.Outlet), wrap(r.Name), wrap(r.Topic), wrap(r.Score), wrap(formatToPercent(r.Percentage)),
-                    wrap(rep ? rep["Skill Level"] : "Pending Review"), wrap(rep ? rep["Competency Comments"] : "N/A"), wrap(rep ? rep["Housebrand Focus"] : "N/A"),
-                    wrap(rep ? rep["Performance Gaps"] : "N/A"), wrap(rep ? rep["Recommendations"] : "N/A"), wrap(rep ? rep["Manager"] : "N/A")
-                ].join(",");
-
+                let row = [wrap(r.Timestamp), wrap(r.Outlet), wrap(r.Name), wrap(r.Topic), wrap(r.Score), wrap(formatToPercent(r.Percentage)), wrap(rep ? rep["Skill Level"] : "Pending Review"), wrap(rep ? rep["Competency Comments"] : "N/A"), wrap(rep ? rep["Housebrand Focus"] : "N/A"), wrap(rep ? rep["Performance Gaps"] : "N/A"), wrap(rep ? rep["Recommendations"] : "N/A"), wrap(rep ? rep["Manager"] : "N/A")].join(",");
                 errors.forEach(e => { row += `,${wrap(e["Question Text"])},${wrap(e["User Choice"])},${wrap(e["Correct Answer"])}`; });
-                for (let i = errors.length; i < maxErrors; i++) { row += `,,,`; }
+                for (let i = errors.length; i < maxErrors; i++) row += `,,,`;
                 csv += row + "\n";
             });
-
             const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const l = document.createElement("a");
             l.href = URL.createObjectURL(b);
-            l.download = `RT_Comprehensive_Report_${new Date().toLocaleDateString()}.csv`;
+            l.download = `RT_Full_Report_${new Date().toLocaleDateString()}.csv`;
             l.click();
         }
 
@@ -541,4 +533,3 @@
     </script>
 </body>
 </html>
-
