@@ -224,20 +224,27 @@
         }
 
         function initDropdowns() {
-            // FIX: Ensure Staff Outlet dropdown is filled
-            const staffO = document.getElementById('staff-outlet');
-            staffO.innerHTML = '<option value="">Select Outlet</option>';
-            outletList.forEach(o => {
-                const opt = document.createElement('option');
-                opt.value = o;
-                opt.innerText = o;
-                staffO.appendChild(opt);
-            });
+    // 1. Fill the Staff Portal Outlet Dropdown
+    const staffO = document.getElementById('staff-outlet');
+    staffO.innerHTML = '<option value="">Select Outlet</option>';
+    // Uses the outletList constant already defined in your script
+    outletList.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o;
+        opt.innerText = o;
+        staffO.appendChild(opt);
+    });
 
-            const mgrS = document.getElementById('mgr-select');
-            mgrS.innerHTML = '<option value="">Select Manager</option>';
-            managerData.forEach(m => mgrS.innerHTML += `<option value="${m.id}">${m.id}</option>`);
-        }
+    // 2. Fill the Manager Portal selection
+    const mgrS = document.getElementById('mgr-select');
+    mgrS.innerHTML = '<option value="">Select Manager</option>';
+    managerData.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.innerText = m.id;
+        mgrS.appendChild(opt);
+    });
+}
 
         function populateGlobalData() {
             const topics = [...new Set(allQuestions.filter(q => {
@@ -539,5 +546,6 @@
     </script>
 </body>
 </html>
+
 
 
