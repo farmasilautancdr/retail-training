@@ -11,7 +11,6 @@
     <link rel="apple-touch-icon" href="icon-192.png">
 
 <script>
-  // Register Service Worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js')
@@ -106,7 +105,7 @@
         <div id="view-supervisor-dash" class="hidden animate__animated animate__fadeIn">
             <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <button onclick="goHome()" class="bg-white p-2 px-6 rounded-xl shadow font-bold">← Home</button>
-                <button onclick="exportWideData()" class="bg-indigo-600 text-white p-3 px-6 rounded-xl shadow-lg font-bold">Download Comprehensive Report (CSV)</button>
+                <button onclick="exportComprehensiveCSV()" class="bg-indigo-600 text-white p-3 px-6 rounded-xl shadow-lg font-bold">Download Comprehensive Report (CSV)</button>
             </div>
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
@@ -155,6 +154,14 @@
                 <select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border font-bold text-indigo-700"></select>
                 <select id="rep-topic" class="w-full p-4 rounded-xl border bg-slate-50" disabled></select>
                 <input type="date" id="rep-date" class="w-full p-4 rounded-xl border">
+                
+                <div id="wrongs-container" class="p-4 bg-red-50 rounded-xl hidden text-[12px] border border-red-100">
+                    <p class="font-black text-red-700 mb-2 uppercase tracking-tight flex items-center">
+                        <span class="mr-2">❌</span> Missed Questions
+                    </p>
+                    <div id="wrongs-list" class="space-y-2 text-red-900 font-medium"></div>
+                </div>
+
                 <div class="grid grid-cols-3 gap-3 text-center">
                     <div class="bg-white p-3 rounded-xl border"><p class="text-[10px] text-slate-400 uppercase">Raw</p><p id="disp-staff-score" class="text-lg font-black"></p></div>
                     <div class="bg-white p-3 rounded-xl border"><p class="text-[10px] text-slate-400 uppercase">Percentage</p><p id="disp-staff-perc" class="text-lg font-black"></p></div>
@@ -164,9 +171,7 @@
                 <textarea id="mgr-housebrand" placeholder="Housebrand Focus" class="w-full p-4 border rounded-xl h-20"></textarea>
                 <textarea id="mgr-gaps" placeholder="Performance Gaps" class="w-full p-4 border rounded-xl h-20"></textarea>
                 <textarea id="mgr-recom" placeholder="Recommendations" class="w-full p-4 border rounded-xl h-20"></textarea>
-                <div id="wrongs-container" class="p-4 bg-red-50 rounded-xl hidden text-[11px] text-red-700">
-                    <p class="font-bold mb-2 uppercase">Gap History:</p><div id="wrongs-list"></div>
-                </div>
+                
                 <button onclick="submitManagerReport()" class="w-full btn-grad p-4 rounded-xl font-bold shadow-lg uppercase tracking-wider">Upload Report</button>
             </div>
         </div>
@@ -210,7 +215,7 @@
         };
 
         async function fetchData() {
-            setLoader(true, "Initial Syncing...");
+            setLoader(true, "Syncing...");
             try {
                 const res = await fetch(GAS_URL);
                 const data = await res.json();
@@ -224,27 +229,16 @@
         }
 
         function initDropdowns() {
-    // 1. Fill the Staff Portal Outlet Dropdown
-    const staffO = document.getElementById('staff-outlet');
-    staffO.innerHTML = '<option value="">Select Outlet</option>';
-    // Uses the outletList constant already defined in your script
-    outletList.forEach(o => {
-        const opt = document.createElement('option');
-        opt.value = o;
-        opt.innerText = o;
-        staffO.appendChild(opt);
-    });
+            const staffO = document.getElementById('staff-outlet');
+            staffO.innerHTML = '<option value="">Select Outlet</option>';
+            outletList.forEach(o => {
+                staffO.innerHTML += `<option value="${o}">${o}</option>`;
+            });
 
-    // 2. Fill the Manager Portal selection
-    const mgrS = document.getElementById('mgr-select');
-    mgrS.innerHTML = '<option value="">Select Manager</option>';
-    managerData.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m.id;
-        opt.innerText = m.id;
-        mgrS.appendChild(opt);
-    });
-}
+            const mgrS = document.getElementById('mgr-select');
+            mgrS.innerHTML = '<option value="">Select Manager</option>';
+            managerData.forEach(m => mgrS.innerHTML += `<option value="${m.id}">${m.id}</option>`);
+        }
 
         function populateGlobalData() {
             const topics = [...new Set(allQuestions.filter(q => {
@@ -298,82 +292,49 @@
         }
 
         function renderQuestion() {
-    const q = currentQuizData[quizIdx];
-    
-    // UI Updates
-    document.getElementById('quiz-back-btn').classList.toggle('hidden', quizIdx > 0);
-    document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
-    document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
-    
-    const grid = document.getElementById('options-grid');
-    grid.innerHTML = '';
-    
-    // Loop through all 4 potential options
-    for(let i=1; i<=4; i++) {
-        const optEn = q[`opt${i}_en`];
-        const optMs = q[`opt${i}_ms`];
-        
-        // Select text based on language
-        let optText = currentLang === 'en' ? optEn : (optMs || optEn);
-
-        // FIX: Only create a button if the option text actually exists
-        // This handles T/F (where opt3/4 are empty) and 4-choice questions
-        if (optText !== undefined && optText !== null && optText.toString().trim() !== "") {
-            const btn = document.createElement('button');
-            btn.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
-            btn.innerText = optText;
+            const q = currentQuizData[quizIdx];
+            document.getElementById('quiz-back-btn').classList.toggle('hidden', quizIdx > 0);
+            document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
+            document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
             
-            // The index (i-1) ensures 0, 1, 2, or 3 is sent to handleChoice
-            btn.onclick = () => handleChoice(i - 1, btn, q); 
-            grid.appendChild(btn);
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            
+            for(let i=1; i<=4; i++) {
+                let optText = currentLang === 'en' ? q[`opt${i}_en`] : (q[`opt${i}_ms`] || q[`opt${i}_en`]);
+                if (optText && optText.toString().trim() !== "") {
+                    const btn = document.createElement('button');
+                    btn.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
+                    btn.innerText = optText;
+                    btn.onclick = () => handleChoice(i - 1, btn, q); 
+                    grid.appendChild(btn);
+                }
+            }
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('submit-quiz-btn').classList.add('hidden');
         }
-    }
-    
-    document.getElementById('next-btn').classList.add('hidden');
-    document.getElementById('submit-quiz-btn').classList.add('hidden');
-}
 
         function handleChoice(idx, btn, q) {
-    // Disable all buttons immediately to prevent double-clicking/cheating
-    const buttons = document.querySelectorAll('.opt-btn');
-    buttons.forEach(b => b.onclick = null);
-
-    // Get the correct index from the spreadsheet (0, 1, 2, or 3)
-    const correctIdx = parseInt(q.correct);
-    
-    // Check if user is correct
-    if (idx === correctIdx) {
-        btn.classList.add('opt-correct');
-        score++;
-    } else {
-        // Highlight selected as wrong (Red)
-        btn.classList.add('opt-wrong');
-        
-        // Highlight the correct one (Green)
-        // We look through our actual rendered buttons to find the correct text match
-        buttons.forEach((b, i) => {
-            // Because our loop only renders existing options, 
-            // we match the button's intended index to the correctIdx
-            if (i === correctIdx) {
-                b.classList.add('opt-correct');
+            const buttons = document.querySelectorAll('.opt-btn');
+            buttons.forEach(b => b.onclick = null);
+            const correctIdx = parseInt(q.correct);
+            
+            if (idx === correctIdx) {
+                btn.classList.add('opt-correct');
+                score++;
+            } else {
+                btn.classList.add('opt-wrong');
+                buttons.forEach((b, i) => { if (i === correctIdx) b.classList.add('opt-correct'); });
+                staffWrongs.push({
+                    qText: currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en),
+                    userChoice: btn.innerText,
+                    correctText: currentLang === 'en' ? q[`opt${correctIdx + 1}_en`] : (q[`opt${correctIdx+1}_ms`] || q[`opt${correctIdx+1}_en`])
+                });
             }
-        });
 
-        // Record the error for the Supervisor Report
-        staffWrongs.push({
-            qText: currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en),
-            userChoice: btn.innerText,
-            correctText: q[`opt${correctIdx + 1}_en`] // +1 because sheet is opt1, opt2...
-        });
-    }
-
-    // Show the "Next" or "Submit" button
-    if (quizIdx < currentQuizData.length - 1) {
-        document.getElementById('next-btn').classList.remove('hidden');
-    } else {
-        document.getElementById('submit-quiz-btn').classList.remove('hidden');
-    }
-}
+            if (quizIdx < currentQuizData.length - 1) document.getElementById('next-btn').classList.remove('hidden');
+            else document.getElementById('submit-quiz-btn').classList.remove('hidden');
+        }
 
         function nextQuestion() { quizIdx++; renderQuestion(); }
 
@@ -395,13 +356,12 @@
                 const mgrId = document.getElementById('mgr-select').value;
                 const outlet = document.getElementById('mgr-outlet').value;
                 const mgrObj = managerData.find(m => m.id === mgrId);
-                
                 if (mgrObj && mgrObj.outlets.includes(outlet)) {
                     document.getElementById('disp-mgr-name').innerText = mgrId;
                     document.getElementById('disp-mgr-outlet').innerText = outlet;
                     populateStaffByOutlet(outlet);
                     showView('view-manager-form');
-                } else { alert("Access Denied: Outlet outside region."); }
+                } else alert("Access Denied: Region Mismatch.");
             } else alert("Invalid Password");
         }
 
@@ -430,17 +390,20 @@
                 document.getElementById('disp-staff-score').innerText = res.Score;
                 document.getElementById('disp-staff-perc').innerText = formatToPercent(res.Percentage);
                 document.getElementById('rep-topic').innerHTML = `<option>${res.Topic}</option>`;
+                
                 const p = parseInt(formatToPercent(res.Percentage));
                 let lvl = "LOW", col = "#ef4444";
                 if(p >= 85) { lvl = "HIGH"; col = "#10b981"; }
                 else if(p >= 71) { lvl = "MEDIUM"; col = "#f59e0b"; }
                 document.getElementById('disp-staff-level').innerText = lvl; 
                 document.getElementById('disp-staff-level-box').style.backgroundColor = col;
-                const wrongs = allWrongAnswers.filter(w => w["Staff Name"] === name);
+
+                // MANAGER WRONG ANSWER VIEW
+                const wrongs = allWrongAnswers.filter(w => w["Staff Name"] === name && w["Topic"] === res.Topic);
                 const wCont = document.getElementById('wrongs-container');
                 if(wrongs.length > 0) {
                     wCont.classList.remove('hidden');
-                    document.getElementById('wrongs-list').innerHTML = wrongs.map(w => `• ${w["Question Text"]} (Ans: ${w["Correct Answer"]})`).join('<br>');
+                    document.getElementById('wrongs-list').innerHTML = wrongs.map(w => `<div class="mb-1 border-b border-red-100 pb-1 italic underline decoration-red-200 underline-offset-4">Q: ${w["Question Text"]} <br><span class="text-[10px] text-green-600 non-italic font-bold">✓ Ans: ${w["Correct Answer"]}</span></div>`).join('');
                 } else wCont.classList.add('hidden');
             }
         }
@@ -453,7 +416,6 @@
                 await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) }); 
                 alert("Report Uploaded!"); 
                 await fetchData(); 
-                showView('view-manager-form'); 
             } catch(e) { alert("Error"); }
             setLoader(false);
         }
@@ -474,8 +436,8 @@
             
             const gaps = {};
             allWrongAnswers.forEach(w => {
-                const q = w["Question Text"] || w.qText;
-                if(!gaps[q]) gaps[q] = { correct: (w["Correct Answer"] || w.correctText), count: 0 };
+                const q = w["Question Text"];
+                if(!gaps[q]) gaps[q] = { correct: w["Correct Answer"], count: 0 };
                 gaps[q].count++;
             });
             const sortedGaps = Object.entries(gaps).sort((a,b) => b[1].count - a[1].count).slice(0, 8);
@@ -483,52 +445,41 @@
             document.getElementById('table-log').innerHTML = allResults.map(r => `<tr><td class="p-3 text-xs text-slate-400">${new Date(r.Timestamp).toLocaleDateString('en-GB')}</td><td class="p-3 font-bold uppercase">${r.Name}</td><td class="p-3 text-xs">${r.Outlet}</td><td class="p-3 text-indigo-600 font-bold">${formatToPercent(r.Percentage)}</td><td class="p-3 text-xs text-slate-400 italic">${r.Topic}</td></tr>`).join('');
         }
 
-        function exportWideData() {
-            if (allReports.length === 0) return alert("No reports found to export.");
-
-            let csv = "Timestamp,Staff_Name,Outlet,Topic,Manager,Report_Date,Quiz_Score,Skill_Level,Comments,Housebrand_Focus,Performance_Gaps,Recommendations";
+        function exportComprehensiveCSV() {
+            if (allResults.length === 0) return alert("No results found to export.");
             
+            const clean = (text) => `"${(text || "").toString().replace(/"/g, "'")}"`;
+            
+            // Determine max errors across all staff for column headers
             let maxErrCount = 0;
-            allReports.forEach(rep => {
-                const staffMistakes = allWrongAnswers.filter(w => 
-                    (w["Staff Name"] === rep["Staff Name"]) && 
-                    (w["Topic"] === rep["Training Title"])
-                );
-                if (staffMistakes.length > maxErrCount) maxErrCount = staffMistakes.length;
+            allResults.forEach(res => {
+                const errors = allWrongAnswers.filter(w => w["Staff Name"] === res.Name && w["Topic"] === res.Topic);
+                if (errors.length > maxErrCount) maxErrCount = errors.length;
             });
-            
+
+            let csv = "Timestamp,Staff_Name,Outlet,Topic,Score,Percentage";
             for (let i = 1; i <= maxErrCount; i++) {
-                csv += `,Mistake_${i}_Question,Mistake_${i}_Staff_Choice,Mistake_${i}_Correct_Answer`;
+                csv += `,Question_${i},User_Answer_${i},Correct_Answer_${i}`;
             }
             csv += "\n";
 
-            allReports.forEach(rep => {
-                const errors = allWrongAnswers.filter(w => 
-                    (w["Staff Name"] === rep["Staff Name"]) && 
-                    (w["Topic"] === rep["Training Title"])
-                );
-
-                const clean = (text) => `"${(text || "").toString().replace(/"/g, "'")}"`;
-
+            allResults.forEach(res => {
                 let row = [
-                    clean(rep.Timestamp),
-                    clean(rep["Staff Name"]),
-                    clean(rep.Outlet),
-                    clean(rep["Training Title"]),
-                    clean(rep.Manager),
-                    clean(rep["Training Date"]),
-                    clean(rep["Quiz Score"]),
-                    clean(rep["Skill Level"]),
-                    clean(rep["Competency Comments"]),
-                    clean(rep["Housebrand Focus"]),
-                    clean(rep["Performance Gaps"]),
-                    clean(rep.Recommendations)
+                    clean(res.Timestamp),
+                    clean(res.Name),
+                    clean(res.Outlet),
+                    clean(res.Topic),
+                    clean(res.Score),
+                    clean(formatToPercent(res.Percentage))
                 ].join(",");
 
+                const errors = allWrongAnswers.filter(w => w["Staff Name"] === res.Name && w["Topic"] === res.Topic);
+                
                 errors.forEach(e => {
                     row += `,${clean(e["Question Text"])},${clean(e["User Choice"])},${clean(e["Correct Answer"])}`;
                 });
 
+                // Pad empty columns for rows with fewer errors
                 for (let i = errors.length; i < maxErrCount; i++) {
                     row += `,,,`;
                 }
@@ -538,7 +489,7 @@
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `RT_PRO_Full_Report_${new Date().toLocaleDateString()}.csv`;
+            link.download = `RT_Comprehensive_Report_${new Date().toLocaleDateString()}.csv`;
             link.click();
         }
 
@@ -546,8 +497,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
