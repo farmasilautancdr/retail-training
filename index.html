@@ -310,25 +310,36 @@
         }
 
         function renderQuestion() {
-            const q = currentQuizData[quizIdx];
-            document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
-            document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
-            const grid = document.getElementById('options-grid');
-            grid.innerHTML = '';
-            for(let i=1; i<=4; i++) {
-                let txt = currentLang === 'en' ? q[`opt${i}_en`] : (q[`opt${i}_ms`] || q[`opt${i}_en`]);
-                if (txt && txt.toString().trim() !== "" && txt.toString().toLowerCase() !== "undefined") {
-                    const b = document.createElement('button');
-                    b.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
-                    b.innerText = txt;
-                    b.onclick = () => handleChoice(i - 1, b, q); 
-                    grid.appendChild(b);
-                }
-            }
-            document.getElementById('next-btn').classList.add('hidden');
-            document.getElementById('submit-quiz-btn').classList.add('hidden');
-            document.getElementById('finish-preview-btn').classList.add('hidden');
+    const q = currentQuizData[quizIdx];
+    document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
+    document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
+    const grid = document.getElementById('options-grid');
+    grid.innerHTML = '';
+    
+    // Check if it's a True/False question (Topic usually contains 'True' or question ends in ?)
+    // Or simply force check opt1 and opt2 no matter what
+    for(let i=1; i<=4; i++) {
+        let optEn = q[`opt${i}_en` || `Opt${i}_en` || `OPT${i}_EN` ];
+        let optMs = q[`opt${i}_ms` || `Opt${i}_ms` || `OPT${i}_MS` ];
+        let txt = currentLang === 'en' ? optEn : (optMs || optEn);
+        
+        // CRITICAL: Convert everything to string and trim
+        let cleanTxt = (txt !== undefined && txt !== null) ? txt.toString().trim() : "";
+
+        // If it's i=1 or i=2, we show it if there's ANY text. 
+        // This ensures T/F (2 options) always show both if both cells have data.
+        if (cleanTxt !== "" && cleanTxt.toLowerCase() !== "undefined") {
+            const b = document.createElement('button');
+            b.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
+            b.innerText = cleanTxt;
+            b.onclick = () => handleChoice(i - 1, b, q); 
+            grid.appendChild(b);
         }
+    }
+    document.getElementById('next-btn').classList.add('hidden');
+    document.getElementById('submit-quiz-btn').classList.add('hidden');
+    document.getElementById('finish-preview-btn').classList.add('hidden');
+}
 
         function handleChoice(idx, btn, q) {
             const buttons = document.querySelectorAll('.opt-btn');
@@ -533,3 +544,4 @@
     </script>
 </body>
 </html>
+
