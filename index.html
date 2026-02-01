@@ -227,7 +227,7 @@
         let currentLang = 'en', quizIdx = 0, score = 0, currentQuizData = [], staffWrongs = [];
         let isQuizRunning = false, isPreviewMode = false;
 
-        // FIXED LIST AND REGIONS
+        // FIXED REGIONS
         const outletList = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
         const managerData = [
             { id: "R1 - AMIRUL", outlets: ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"] },
@@ -283,24 +283,31 @@
             activeTopics.forEach(t => mgrTopic.innerHTML += `<option value="${t}">${t}</option>`);
         }
 
+        // --- FIXED ROBUST STAFF FILTERING ---
         function updateStaffByTopic() {
             const topic = document.getElementById('rep-topic-filter').value;
-            const outlet = document.getElementById('disp-mgr-outlet').innerText;
+            const outletRaw = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase();
             const staffSelect = document.getElementById('rep-staff');
-            const mName = document.getElementById('disp-mgr-name').innerText;
             
             staffSelect.innerHTML = '<option value="">Choose Staff...</option>';
-            
             if(!topic) return;
 
-            // Filter results for that outlet AND that topic
-            const staffWhoTookQuiz = allResults.filter(r => r.Outlet === outlet && r.Topic === topic);
+            // Clean the data while filtering to handle hidden spaces in the sheet
+            const staffWhoTookQuiz = allResults.filter(r => {
+                const sheetOutlet = (r.Outlet || "").toString().trim().toUpperCase();
+                const sheetTopic = (r.Topic || "").toString().trim();
+                return sheetOutlet === outletRaw && sheetTopic === topic;
+            });
             
+            if(staffWhoTookQuiz.length === 0) {
+                staffSelect.innerHTML = '<option value="">No staff found for this topic in your outlet</option>';
+                return;
+            }
+
             staffWhoTookQuiz.forEach(r => {
-                // Check if manager already submitted for this specific staff + topic
                 const isSubmitted = allReports.some(rep => 
-                    rep["Staff Name"].trim().toUpperCase() === r.Name.trim().toUpperCase() && 
-                    rep["Training Title"] === topic
+                    (rep["Staff Name"] || "").toString().trim().toUpperCase() === (r.Name || "").toString().trim().toUpperCase() && 
+                    (rep["Training Title"] || "").toString().trim() === topic
                 );
 
                 const statusLabel = isSubmitted ? "✅ [SUBMITTED]" : "❌ [PENDING]";
@@ -310,12 +317,16 @@
 
         function onStaffSelect() {
             const n = document.getElementById('rep-staff').value;
-            const o = document.getElementById('disp-mgr-outlet').innerText;
+            const o = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase();
             const topic = document.getElementById('rep-topic-filter').value;
             const m = document.getElementById('disp-mgr-name').innerText;
-            const r = allResults.find(x => x.Name === n && x.Outlet === o && x.Topic === topic);
             
-            // Reset fields
+            const r = allResults.find(x => 
+                (x.Name || "").trim().toUpperCase() === n.trim().toUpperCase() && 
+                (x.Outlet || "").trim().toUpperCase() === o && 
+                x.Topic === topic
+            );
+            
             document.getElementById('mgr-comment').value = "";
             document.getElementById('mgr-housebrand').value = "";
             document.getElementById('mgr-gaps').value = "";
@@ -332,8 +343,11 @@
                 document.getElementById('disp-staff-level').innerText = lvl; 
                 document.getElementById('disp-staff-level-box').style.backgroundColor = col;
 
-                // Load existing data if report exists
-                const existing = allReports.find(x => x["Staff Name"].trim().toUpperCase() === n.trim().toUpperCase() && x["Training Title"] === topic);
+                const existing = allReports.find(x => 
+                    (x["Staff Name"] || "").toString().trim().toUpperCase() === n.trim().toUpperCase() && 
+                    (x["Training Title"] || "").toString().trim() === topic
+                );
+                
                 if (existing) {
                     if (existing["Manager"] === m) {
                         document.getElementById('mgr-comment').value = existing["Competency Comments"] || "";
@@ -347,7 +361,7 @@
                     }
                 }
 
-                const wr = allWrongAnswers.filter(w => w["Staff Name"] === n && w["Topic"] === r.Topic);
+                const wr = allWrongAnswers.filter(w => (w["Staff Name"] || "").trim().toUpperCase() === n.trim().toUpperCase() && w["Topic"] === r.Topic);
                 const cont = document.getElementById('wrongs-container');
                 if(wr.length > 0) {
                     cont.classList.remove('hidden');
@@ -356,44 +370,7 @@
             }
         }
 
-        function startPreview() {
-            const t = document.getElementById('sup-preview-topic').value;
-            if(!t) return alert("Select a topic");
-            currentQuizData = allQuestions.filter(q => q.topic == t);
-            quizIdx = 0; score = 0; isPreviewMode = true; isQuizRunning = false;
-            renderQuestion(); showView('view-quiz');
-        }
-
-        function setLoader(show, text = "Processing...") {
-            const l = document.getElementById('loader');
-            document.getElementById('loader-text').innerText = text;
-            l.classList.toggle('hidden', !show);
-        }
-
-        function showView(id) {
-            document.querySelectorAll('.max-w-4xl > div').forEach(d => d.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            window.scrollTo(0,0);
-        }
-
-        function goHome() { isQuizRunning = false; isPreviewMode = false; showView('view-main'); }
-        function setLang(l) {
-            currentLang = l;
-            document.getElementById('lang-en').className = l === 'en' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
-            document.getElementById('lang-ms').className = l === 'ms' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold';
-        }
-
-        function startQuiz() {
-            const n = document.getElementById('staff-name').value;
-            const t = document.getElementById('staff-topic').value;
-            const o = document.getElementById('staff-outlet').value;
-            if(!n || !t || !o) return alert("All fields required");
-            currentQuizData = allQuestions.filter(q => q.topic == t);
-            quizIdx = 0; score = 0; staffWrongs = [];
-            isQuizRunning = true; isPreviewMode = false;
-            renderQuestion(); showView('view-quiz');
-        }
-
+        // --- TRUE/FALSE FIX ---
         function renderQuestion() {
             const q = currentQuizData[quizIdx];
             document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
@@ -402,8 +379,8 @@
             grid.innerHTML = '';
             
             for(let i=1; i<=4; i++) {
-                let optEn = q[`opt${i}_en` || `Opt${i}_en` || `OPT${i}_EN` ];
-                let optMs = q[`opt${i}_ms` || `Opt${i}_ms` || `OPT${i}_MS` ];
+                let optEn = q[`opt${i}_en`];
+                let optMs = q[`opt${i}_ms`];
                 let txt = currentLang === 'en' ? optEn : (optMs || optEn);
                 let cleanTxt = (txt !== undefined && txt !== null) ? txt.toString().trim() : "";
 
@@ -440,6 +417,14 @@
             else isPreviewMode ? document.getElementById('finish-preview-btn').classList.remove('hidden') : document.getElementById('submit-quiz-btn').classList.remove('hidden');
         }
 
+        function startPreview() {
+            const t = document.getElementById('sup-preview-topic').value;
+            if(!t) return alert("Select a topic");
+            currentQuizData = allQuestions.filter(q => q.topic == t);
+            quizIdx = 0; score = 0; isPreviewMode = true; isQuizRunning = false;
+            renderQuestion(); showView('view-quiz');
+        }
+
         function nextQuestion() { quizIdx++; renderQuestion(); }
 
         async function saveQuizResult() {
@@ -463,7 +448,6 @@
                     document.getElementById('disp-mgr-name').innerText = id;
                     document.getElementById('disp-mgr-outlet').innerText = o;
                     showView('view-manager-form');
-                    // RESET FORM ON LOGIN
                     document.getElementById('rep-topic-filter').value = "";
                     document.getElementById('rep-staff').innerHTML = '<option value="">Choose Topic First...</option>';
                 } else alert("Outlet access denied.");
@@ -563,6 +547,17 @@
         }
 
         function loginSupervisor() { if(document.getElementById('sup-pass').value === "admin") { renderSupervisorStats(); showView('view-supervisor-dash'); } else alert("Denied"); }
+
+        function setLoader(show, text = "Processing...") {
+            const l = document.getElementById('loader');
+            document.getElementById('loader-text').innerText = text;
+            l.classList.toggle('hidden', !show);
+        }
+
+        function showView(id) {
+            document.querySelectorAll('.max-w-4xl > div').forEach(d => d.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
     </script>
 </body>
 </html>
