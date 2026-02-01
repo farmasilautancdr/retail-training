@@ -171,7 +171,7 @@
                     <button onclick="location.reload()" class="text-red-500 font-bold text-sm">Logout</button>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl grid grid-cols-2 text-xs font-bold">
-                    <div><p class="text-slate-400 uppercase">Assessing Manager</p><p id="disp-mgr-name" class="text-indigo-600"></p></div>
+                    <div><p class="text-slate-400 uppercase">Manager</p><p id="disp-mgr-name" class="text-indigo-600"></p></div>
                     <div><p class="text-slate-400 uppercase">Outlet</p><p id="disp-mgr-outlet" class="text-indigo-600"></p></div>
                 </div>
 
@@ -227,8 +227,6 @@
         let currentLang = 'en', quizIdx = 0, score = 0, currentQuizData = [], staffWrongs = [];
         let isQuizRunning = false, isPreviewMode = false;
 
-        // FIXED REGIONS
-        const outletList = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
         const managerData = [
             { id: "R1 - AMIRUL", outlets: ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"] },
             { id: "R2 - HAZWANI", outlets: ["AJ", "BJR", "BP", "HQCT", "KB", "PK", "WM"] },
@@ -241,8 +239,7 @@
             { id: "R9 - IFFAH / RAIHAN", outlets: ["GM", "CK"] }
         ];
 
-        window.onload = () => { initDropdowns(); fetchData(); };
-        window.onbeforeunload = function() { if(isQuizRunning && !isPreviewMode) { autoSubmitQuiz(); return "Unsaved Progress."; } };
+        window.onload = fetchData;
 
         async function fetchData() {
             setLoader(true, "Synchronizing...");
@@ -256,15 +253,6 @@
                 populateGlobalData();
             } catch (e) { alert("Fetch Error"); }
             setLoader(false);
-        }
-
-        function initDropdowns() {
-            const staffO = document.getElementById('staff-outlet');
-            staffO.innerHTML = '<option value="">Select Outlet</option>';
-            outletList.forEach(o => staffO.innerHTML += `<option value="${o}">${o}</option>`);
-            const mgrS = document.getElementById('mgr-select');
-            mgrS.innerHTML = '<option value="">Select Manager</option>';
-            managerData.forEach(m => mgrS.innerHTML += `<option value="${m.id}">${m.id}</option>`);
         }
 
         function populateGlobalData() {
@@ -283,19 +271,18 @@
             activeTopics.forEach(t => mgrTopic.innerHTML += `<option value="${t}">${t}</option>`);
         }
 
-        // --- FIXED ROBUST STAFF FILTERING ---
-        function updateStaffByTopic() {
-            const topic = document.getElementById('rep-topic-filter').value;
+        // --- FIXED FUZZY-MATCH FILTERING ---
+                function updateStaffByTopic() {
+            const topic = document.getElementById('rep-topic-filter').value.toString().trim().toLowerCase();
             const outletRaw = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase();
             const staffSelect = document.getElementById('rep-staff');
             
             staffSelect.innerHTML = '<option value="">Choose Staff...</option>';
             if(!topic) return;
 
-            // Clean the data while filtering to handle hidden spaces in the sheet
             const staffWhoTookQuiz = allResults.filter(r => {
                 const sheetOutlet = (r.Outlet || "").toString().trim().toUpperCase();
-                const sheetTopic = (r.Topic || "").toString().trim();
+                const sheetTopic = (r.Topic || "").toString().trim().toLowerCase();
                 return sheetOutlet === outletRaw && sheetTopic === topic;
             });
             
@@ -307,7 +294,7 @@
             staffWhoTookQuiz.forEach(r => {
                 const isSubmitted = allReports.some(rep => 
                     (rep["Staff Name"] || "").toString().trim().toUpperCase() === (r.Name || "").toString().trim().toUpperCase() && 
-                    (rep["Training Title"] || "").toString().trim() === topic
+                    (rep["Training Title"] || "").toString().trim().toLowerCase() === topic
                 );
 
                 const statusLabel = isSubmitted ? "✅ [SUBMITTED]" : "❌ [PENDING]";
@@ -322,9 +309,9 @@
             const m = document.getElementById('disp-mgr-name').innerText;
             
             const r = allResults.find(x => 
-                (x.Name || "").trim().toUpperCase() === n.trim().toUpperCase() && 
-                (x.Outlet || "").trim().toUpperCase() === o && 
-                x.Topic === topic
+                (x.Name || "").toString().trim().toUpperCase() === n.trim().toUpperCase() && 
+                (x.Outlet || "").toString().trim().toUpperCase() === o && 
+                (x.Topic || "").toString().trim().toLowerCase() === topic.toString().trim().toLowerCase()
             );
             
             document.getElementById('mgr-comment').value = "";
@@ -345,7 +332,7 @@
 
                 const existing = allReports.find(x => 
                     (x["Staff Name"] || "").toString().trim().toUpperCase() === n.trim().toUpperCase() && 
-                    (x["Training Title"] || "").toString().trim() === topic
+                    (x["Training Title"] || "").toString().trim().toLowerCase() === topic.toString().trim().toLowerCase()
                 );
                 
                 if (existing) {
@@ -361,7 +348,10 @@
                     }
                 }
 
-                const wr = allWrongAnswers.filter(w => (w["Staff Name"] || "").trim().toUpperCase() === n.trim().toUpperCase() && w["Topic"] === r.Topic);
+                const wr = allWrongAnswers.filter(w => 
+                    (w["Staff Name"] || "").toString().trim().toUpperCase() === n.trim().toUpperCase() && 
+                    (w["Topic"] || "").toString().trim().toLowerCase() === topic.toString().trim().toLowerCase()
+                );
                 const cont = document.getElementById('wrongs-container');
                 if(wr.length > 0) {
                     cont.classList.remove('hidden');
@@ -397,6 +387,18 @@
             document.getElementById('finish-preview-btn').classList.add('hidden');
         }
 
+        // ... Keep existing loginManager, export, etc. ...
+        function startQuiz() {
+            const n = document.getElementById('staff-name').value;
+            const t = document.getElementById('staff-topic').value;
+            const o = document.getElementById('staff-outlet').value;
+            if(!n || !t || !o) return alert("All fields required");
+            currentQuizData = allQuestions.filter(q => q.topic == t);
+            quizIdx = 0; score = 0; staffWrongs = [];
+            isQuizRunning = true; isPreviewMode = false;
+            renderQuestion(); showView('view-quiz');
+        }
+
         function handleChoice(idx, btn, q) {
             const buttons = document.querySelectorAll('.opt-btn');
             buttons.forEach(b => b.onclick = null);
@@ -417,14 +419,6 @@
             else isPreviewMode ? document.getElementById('finish-preview-btn').classList.remove('hidden') : document.getElementById('submit-quiz-btn').classList.remove('hidden');
         }
 
-        function startPreview() {
-            const t = document.getElementById('sup-preview-topic').value;
-            if(!t) return alert("Select a topic");
-            currentQuizData = allQuestions.filter(q => q.topic == t);
-            quizIdx = 0; score = 0; isPreviewMode = true; isQuizRunning = false;
-            renderQuestion(); showView('view-quiz');
-        }
-
         function nextQuestion() { quizIdx++; renderQuestion(); }
 
         async function saveQuizResult() {
@@ -432,11 +426,6 @@
             const p = { action: 'save_result', name: document.getElementById('staff-name').value.toUpperCase().trim(), outlet: document.getElementById('staff-outlet').value, topic: document.getElementById('staff-topic').value, score: `${score}/${currentQuizData.length}`, perc: Math.round((score/currentQuizData.length) * 100) + "%", wrongAnswers: staffWrongs };
             try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) }); alert("Done!"); location.reload(); }
             catch(e) { alert("Sync Error"); setLoader(false); }
-        }
-
-        async function autoSubmitQuiz() {
-            const p = { action: 'save_result', name: document.getElementById('staff-name').value.toUpperCase().trim(), outlet: document.getElementById('staff-outlet').value, topic: document.getElementById('staff-topic').value, score: `ABANDONED_${score}`, perc: "0%", wrongAnswers: [] };
-            fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
         }
 
         function loginManager() {
@@ -532,8 +521,8 @@
             allResults.forEach(r => {
                 const sName = r.Name.trim().toUpperCase();
                 const sTopic = r.Topic.trim();
-                const rep = allReports.find(x => x["Staff Name"].trim().toUpperCase() === sName && x["Training Title"].trim() === sTopic);
-                const errors = allWrongAnswers.filter(w => w["Staff Name"].trim().toUpperCase() === sName && w["Topic"].trim() === sTopic);
+                const rep = allReports.find(x => (x["Staff Name"] || "").toString().trim().toUpperCase() === sName && (x["Training Title"] || "").toString().trim() === sTopic);
+                const errors = allWrongAnswers.filter(w => (w["Staff Name"] || "").trim().toUpperCase() === sName && (w["Topic"] || "").trim() === sTopic);
                 let row = [wrap(r.Timestamp), wrap(r.Outlet), wrap(r.Name), wrap(r.Topic), wrap(r.Score), wrap(formatToPercent(r.Percentage)), wrap(rep ? rep["Skill Level"] : "Pending Review"), wrap(rep ? rep["Competency Comments"] : "N/A"), wrap(rep ? rep["Housebrand Focus"] : "N/A"), wrap(rep ? rep["Performance Gaps"] : "N/A"), wrap(rep ? rep["Recommendations"] : "N/A"), wrap(rep ? rep["Manager"] : "N/A")].join(",");
                 errors.forEach(e => { row += `,${wrap(e["Question Text"])},${wrap(e["User Choice"])},${wrap(e["Correct Answer"])}`; });
                 for (let i = errors.length; i < maxErrors; i++) row += `,,,`;
