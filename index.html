@@ -119,7 +119,7 @@
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-center">
                 <div class="glass p-4 rounded-2xl border-b-4 border-blue-500"><p class="text-[10px] text-slate-400 uppercase">Staff</p><h3 id="stat-staff" class="text-2xl font-black">0</h3></div>
-                <div class="glass p-4 rounded-2xl border-b-4 border-green-500"><p class="text-[10px] text-slate-400 uppercase">Avg</p><h3 id="stat-avg" class="text-2xl font-black">0%</h3></div>
+                <div class="glass p-4 rounded-2xl border-b-4 border-green-500"><p class="text-[10px] text-slate-400 uppercase">Avg Accuracy</p><h3 id="stat-avg" class="text-2xl font-black">0%</h3></div>
                 <div class="glass p-4 rounded-2xl border-b-4 border-orange-500"><p class="text-[10px] text-slate-400 uppercase">Outlets</p><h3 id="stat-outlets" class="text-2xl font-black">0</h3></div>
                 <div class="glass p-4 rounded-2xl border-b-4 border-purple-500"><p class="text-[10px] text-slate-400 uppercase">Reports</p><h3 id="stat-reports" class="text-2xl font-black">0</h3></div>
             </div>
@@ -171,11 +171,22 @@
                     <button onclick="location.reload()" class="text-red-500 font-bold text-sm">Logout</button>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl grid grid-cols-2 text-xs font-bold">
-                    <div><p class="text-slate-400 uppercase">Manager</p><p id="disp-mgr-name" class="text-indigo-600"></p></div>
+                    <div><p class="text-slate-400 uppercase">Assessing Manager</p><p id="disp-mgr-name" class="text-indigo-600"></p></div>
                     <div><p class="text-slate-400 uppercase">Outlet</p><p id="disp-mgr-outlet" class="text-indigo-600"></p></div>
                 </div>
-                <select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border font-bold text-indigo-700"></select>
-                <select id="rep-topic" class="w-full p-4 rounded-xl border bg-slate-50" disabled></select>
+
+                <div class="space-y-3">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 1: Select Topic</p>
+                    <select id="rep-topic-filter" onchange="updateStaffByTopic()" class="w-full p-4 rounded-xl border bg-white font-bold text-indigo-600">
+                        <option value="">Choose Topic First...</option>
+                    </select>
+
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 2: Select Staff Member</p>
+                    <select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border font-bold text-indigo-700">
+                        <option value="">Then choose Staff...</option>
+                    </select>
+                </div>
+                
                 <input type="date" id="rep-date" class="w-full p-4 rounded-xl border">
                 
                 <div id="wrongs-container" class="p-4 bg-red-50 rounded-xl hidden text-[11px] text-red-700 border border-red-100 shadow-inner">
@@ -216,7 +227,8 @@
         let currentLang = 'en', quizIdx = 0, score = 0, currentQuizData = [], staffWrongs = [];
         let isQuizRunning = false, isPreviewMode = false;
 
-        const outletList = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "RP", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
+        // FIXED LIST AND REGIONS
+        const outletList = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
         const managerData = [
             { id: "R1 - AMIRUL", outlets: ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"] },
             { id: "R2 - HAZWANI", outlets: ["AJ", "BJR", "BP", "HQCT", "KB", "PK", "WM"] },
@@ -224,8 +236,9 @@
             { id: "R4 - RAIHAN", outlets: ["GB", "GBD", "JTH", "RJ", "ST", "TPOH"] },
             { id: "R5 - ADNIN", outlets: ["JL", "JLD", "PP", "PSPD", "SMR"] },
             { id: "R6 - NADHIRAH", outlets: ["KS", "MC", "MLR", "TM", "TMD", "TMT"] },
-            { id: "R7 - HASANUL", outlets: ["KBKK", "KBKS", "KBTC", "KBTJ", "PC", "PT"] },
-            { id: "R8 - HAFSHAM", outlets: ["GM", "PM", "SLS", "TPT", "KKR", "PPK", "CK", "RP"] }
+            { id: "R7 - HASANUL", outlets: ["KBKK", "KBKS", "KBTJ", "PC", "PT"] },
+            { id: "R8 - HAFSHAM", outlets: ["PM", "SLS", "TPT", "KKR", "PPK"] },
+            { id: "R9 - IFFAH / RAIHAN", outlets: ["GM", "CK"] }
         ];
 
         window.onload = () => { initDropdowns(); fetchData(); };
@@ -256,6 +269,7 @@
 
         function populateGlobalData() {
             const activeTopics = [...new Set(allQuestions.filter(q => (q.status || q.Status || q.STATUS) !== "Inactive").map(q => q.topic))].filter(t => t);
+            
             const staffTopic = document.getElementById('staff-topic');
             staffTopic.innerHTML = '<option value="">Select Training Topic</option>';
             activeTopics.forEach(t => staffTopic.innerHTML += `<option value="${t}">${t}</option>`);
@@ -264,11 +278,82 @@
             supTopic.innerHTML = '<option value="">Preview Topic...</option>';
             activeTopics.forEach(t => supTopic.innerHTML += `<option value="${t}">${t}</option>`);
 
-            const repStaff = document.getElementById('rep-staff');
-            repStaff.innerHTML = '<option value="">Select Staff Member</option>';
-            allResults.sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp)).forEach(r => {
-                repStaff.innerHTML += `<option value="${r.Name}">${r.Name}</option>`;
+            const mgrTopic = document.getElementById('rep-topic-filter');
+            mgrTopic.innerHTML = '<option value="">Choose Topic First...</option>';
+            activeTopics.forEach(t => mgrTopic.innerHTML += `<option value="${t}">${t}</option>`);
+        }
+
+        function updateStaffByTopic() {
+            const topic = document.getElementById('rep-topic-filter').value;
+            const outlet = document.getElementById('disp-mgr-outlet').innerText;
+            const staffSelect = document.getElementById('rep-staff');
+            const mName = document.getElementById('disp-mgr-name').innerText;
+            
+            staffSelect.innerHTML = '<option value="">Choose Staff...</option>';
+            
+            if(!topic) return;
+
+            // Filter results for that outlet AND that topic
+            const staffWhoTookQuiz = allResults.filter(r => r.Outlet === outlet && r.Topic === topic);
+            
+            staffWhoTookQuiz.forEach(r => {
+                // Check if manager already submitted for this specific staff + topic
+                const isSubmitted = allReports.some(rep => 
+                    rep["Staff Name"].trim().toUpperCase() === r.Name.trim().toUpperCase() && 
+                    rep["Training Title"] === topic
+                );
+
+                const statusLabel = isSubmitted ? "✅ [SUBMITTED]" : "❌ [PENDING]";
+                staffSelect.innerHTML += `<option value="${r.Name}">${statusLabel} ${r.Name}</option>`;
             });
+        }
+
+        function onStaffSelect() {
+            const n = document.getElementById('rep-staff').value;
+            const o = document.getElementById('disp-mgr-outlet').innerText;
+            const topic = document.getElementById('rep-topic-filter').value;
+            const m = document.getElementById('disp-mgr-name').innerText;
+            const r = allResults.find(x => x.Name === n && x.Outlet === o && x.Topic === topic);
+            
+            // Reset fields
+            document.getElementById('mgr-comment').value = "";
+            document.getElementById('mgr-housebrand').value = "";
+            document.getElementById('mgr-gaps').value = "";
+            document.getElementById('mgr-recom').value = "";
+            document.getElementById('edit-indicator').classList.add('hidden');
+
+            if(r) {
+                document.getElementById('disp-staff-score').innerText = r.Score;
+                document.getElementById('disp-staff-perc').innerText = formatToPercent(r.Percentage);
+                const p = parseInt(formatToPercent(r.Percentage));
+                let lvl = "LOW", col = "#ef4444";
+                if(p >= 85) { lvl = "HIGH"; col = "#10b981"; }
+                else if(p >= 71) { lvl = "MEDIUM"; col = "#f59e0b"; }
+                document.getElementById('disp-staff-level').innerText = lvl; 
+                document.getElementById('disp-staff-level-box').style.backgroundColor = col;
+
+                // Load existing data if report exists
+                const existing = allReports.find(x => x["Staff Name"].trim().toUpperCase() === n.trim().toUpperCase() && x["Training Title"] === topic);
+                if (existing) {
+                    if (existing["Manager"] === m) {
+                        document.getElementById('mgr-comment').value = existing["Competency Comments"] || "";
+                        document.getElementById('mgr-housebrand').value = existing["Housebrand Focus"] || "";
+                        document.getElementById('mgr-gaps').value = existing["Performance Gaps"] || "";
+                        document.getElementById('mgr-recom').value = existing["Recommendations"] || "";
+                        document.getElementById('edit-indicator').classList.remove('hidden');
+                    } else {
+                        alert(`Note: ${existing["Manager"]} has already submitted a report for this session. You cannot edit it.`);
+                        document.getElementById('rep-staff').value = "";
+                    }
+                }
+
+                const wr = allWrongAnswers.filter(w => w["Staff Name"] === n && w["Topic"] === r.Topic);
+                const cont = document.getElementById('wrongs-container');
+                if(wr.length > 0) {
+                    cont.classList.remove('hidden');
+                    document.getElementById('wrongs-list').innerHTML = wr.map(w => `<div class="bg-white p-2 rounded border border-red-50 mb-1 shadow-sm"><span class="font-bold text-red-900 block">Q: ${w["Question Text"]}</span><span class="text-green-700 font-black block mt-1">✓ Correct: ${w["Correct Answer"]}</span></div>`).join('');
+                } else cont.classList.add('hidden');
+            }
         }
 
         function startPreview() {
@@ -310,36 +395,30 @@
         }
 
         function renderQuestion() {
-    const q = currentQuizData[quizIdx];
-    document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
-    document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
-    const grid = document.getElementById('options-grid');
-    grid.innerHTML = '';
-    
-    // Check if it's a True/False question (Topic usually contains 'True' or question ends in ?)
-    // Or simply force check opt1 and opt2 no matter what
-    for(let i=1; i<=4; i++) {
-        let optEn = q[`opt${i}_en` || `Opt${i}_en` || `OPT${i}_EN` ];
-        let optMs = q[`opt${i}_ms` || `Opt${i}_ms` || `OPT${i}_MS` ];
-        let txt = currentLang === 'en' ? optEn : (optMs || optEn);
-        
-        // CRITICAL: Convert everything to string and trim
-        let cleanTxt = (txt !== undefined && txt !== null) ? txt.toString().trim() : "";
+            const q = currentQuizData[quizIdx];
+            document.getElementById('quiz-progress').innerText = `Q ${quizIdx+1}/${currentQuizData.length}`;
+            document.getElementById('q-text').innerText = currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en);
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            
+            for(let i=1; i<=4; i++) {
+                let optEn = q[`opt${i}_en` || `Opt${i}_en` || `OPT${i}_EN` ];
+                let optMs = q[`opt${i}_ms` || `Opt${i}_ms` || `OPT${i}_MS` ];
+                let txt = currentLang === 'en' ? optEn : (optMs || optEn);
+                let cleanTxt = (txt !== undefined && txt !== null) ? txt.toString().trim() : "";
 
-        // If it's i=1 or i=2, we show it if there's ANY text. 
-        // This ensures T/F (2 options) always show both if both cells have data.
-        if (cleanTxt !== "" && cleanTxt.toLowerCase() !== "undefined") {
-            const b = document.createElement('button');
-            b.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
-            b.innerText = cleanTxt;
-            b.onclick = () => handleChoice(i - 1, b, q); 
-            grid.appendChild(b);
+                if (cleanTxt !== "" && cleanTxt.toLowerCase() !== "undefined") {
+                    const b = document.createElement('button');
+                    b.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
+                    b.innerText = cleanTxt;
+                    b.onclick = () => handleChoice(i - 1, b, q); 
+                    grid.appendChild(b);
+                }
+            }
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('submit-quiz-btn').classList.add('hidden');
+            document.getElementById('finish-preview-btn').classList.add('hidden');
         }
-    }
-    document.getElementById('next-btn').classList.add('hidden');
-    document.getElementById('submit-quiz-btn').classList.add('hidden');
-    document.getElementById('finish-preview-btn').classList.add('hidden');
-}
 
         function handleChoice(idx, btn, q) {
             const buttons = document.querySelectorAll('.opt-btn');
@@ -364,7 +443,7 @@
         function nextQuestion() { quizIdx++; renderQuestion(); }
 
         async function saveQuizResult() {
-            isQuizRunning = false; setLoader(true, "Saving...");
+            isQuizRunning = false; setLoader(true, "Saving Result...");
             const p = { action: 'save_result', name: document.getElementById('staff-name').value.toUpperCase().trim(), outlet: document.getElementById('staff-outlet').value, topic: document.getElementById('staff-topic').value, score: `${score}/${currentQuizData.length}`, perc: Math.round((score/currentQuizData.length) * 100) + "%", wrongAnswers: staffWrongs };
             try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) }); alert("Done!"); location.reload(); }
             catch(e) { alert("Sync Error"); setLoader(false); }
@@ -383,8 +462,10 @@
                 if (m && m.outlets.includes(o)) {
                     document.getElementById('disp-mgr-name').innerText = id;
                     document.getElementById('disp-mgr-outlet').innerText = o;
-                    populateStaffByOutlet(o);
                     showView('view-manager-form');
+                    // RESET FORM ON LOGIN
+                    document.getElementById('rep-topic-filter').value = "";
+                    document.getElementById('rep-staff').innerHTML = '<option value="">Choose Topic First...</option>';
                 } else alert("Outlet access denied.");
             } else alert("Invalid Pin.");
         }
@@ -397,81 +478,22 @@
             if(m) m.outlets.forEach(o => outS.innerHTML += `<option value="${o}">${o}</option>`);
         }
 
-        function populateStaffByOutlet(o) {
-            const s = document.getElementById('rep-staff');
-            s.innerHTML = '<option value="">Select Staff Member</option>';
-            allResults.filter(r => r.Outlet === o).sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp)).forEach(r => {
-                s.innerHTML += `<option value="${r.Name}">${r.Name}</option>`;
-            });
-        }
-
-        // --- MANAGER DASHBOARD LOGIC (EDIT FEATURE) ---
-        
-        function onStaffSelect() {
-            const n = document.getElementById('rep-staff').value;
-            const o = document.getElementById('disp-mgr-outlet').innerText;
-            const m = document.getElementById('disp-mgr-name').innerText;
-            const r = allResults.find(x => x.Name === n && x.Outlet === o);
-            
-            // Reset fields
-            document.getElementById('mgr-comment').value = "";
-            document.getElementById('mgr-housebrand').value = "";
-            document.getElementById('mgr-gaps').value = "";
-            document.getElementById('mgr-recom').value = "";
-            document.getElementById('edit-indicator').classList.add('hidden');
-
-            if(r) {
-                document.getElementById('disp-staff-score').innerText = r.Score;
-                document.getElementById('disp-staff-perc').innerText = formatToPercent(r.Percentage);
-                document.getElementById('rep-topic').innerHTML = `<option>${r.Topic}</option>`;
-                const p = parseInt(formatToPercent(r.Percentage));
-                let lvl = "LOW", col = "#ef4444";
-                if(p >= 85) { lvl = "HIGH"; col = "#10b981"; }
-                else if(p >= 71) { lvl = "MEDIUM"; col = "#f59e0b"; }
-                document.getElementById('disp-staff-level').innerText = lvl; 
-                document.getElementById('disp-staff-level-box').style.backgroundColor = col;
-
-                // Load existing data if report exists
-                const existing = allReports.find(x => x["Staff Name"].trim().toUpperCase() === n.trim().toUpperCase() && x["Training Title"] === r.Topic);
-                if (existing) {
-                    if (existing["Manager"] === m) {
-                        document.getElementById('mgr-comment').value = existing["Competency Comments"] || "";
-                        document.getElementById('mgr-housebrand').value = existing["Housebrand Focus"] || "";
-                        document.getElementById('mgr-gaps').value = existing["Performance Gaps"] || "";
-                        document.getElementById('mgr-recom').value = existing["Recommendations"] || "";
-                        document.getElementById('edit-indicator').classList.remove('hidden');
-                    } else {
-                        alert(`Note: ${existing["Manager"]} has already submitted a report for this session. You cannot edit it.`);
-                    }
-                }
-
-                const wr = allWrongAnswers.filter(w => w["Staff Name"] === n && w["Topic"] === r.Topic);
-                const cont = document.getElementById('wrongs-container');
-                if(wr.length > 0) {
-                    cont.classList.remove('hidden');
-                    document.getElementById('wrongs-list').innerHTML = wr.map(w => `<div class="bg-white p-2 rounded border border-red-50 mb-1 shadow-sm"><span class="font-bold text-red-900 block">Q: ${w["Question Text"]}</span><span class="text-green-700 font-black block mt-1">✓ Correct: ${w["Correct Answer"]}</span></div>`).join('');
-                } else cont.classList.add('hidden');
-            }
-        }
-
-        // --- SUBMIT WITH USER WARNINGS ---
         async function submitManagerReport() {
             if(!document.getElementById('rep-date').value) return alert("Select date");
             setLoader(true, "Processing...");
-            const p = { action: 'save_report', manager: document.getElementById('disp-mgr-name').innerText, outlet: document.getElementById('disp-mgr-outlet').innerText, staffName: document.getElementById('rep-staff').value, staffScore: document.getElementById('disp-staff-perc').innerText, trainTitle: document.getElementById('rep-topic').value, trainingDate: document.getElementById('rep-date').value, level: document.getElementById('disp-staff-level').innerText, comments: document.getElementById('mgr-comment').value, focus: document.getElementById('mgr-housebrand').value, gaps: document.getElementById('mgr-gaps').value, rec: document.getElementById('mgr-recom').value };
+            const p = { action: 'save_report', manager: document.getElementById('disp-mgr-name').innerText, outlet: document.getElementById('disp-mgr-outlet').innerText, staffName: document.getElementById('rep-staff').value, staffScore: document.getElementById('disp-staff-perc').innerText, trainTitle: document.getElementById('rep-topic-filter').value, trainingDate: document.getElementById('rep-date').value, level: document.getElementById('disp-staff-level').innerText, comments: document.getElementById('mgr-comment').value, focus: document.getElementById('mgr-housebrand').value, gaps: document.getElementById('mgr-gaps').value, rec: document.getElementById('mgr-recom').value };
             
             try { 
                 const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
                 const result = await res.text();
-                
                 if (result === "AUTH_ERROR") {
                     alert("❌ ACCESS DENIED: Only the original author can edit this report.");
                 } else if (result === "UPDATE_SUCCESS") {
                     alert("📝 SUCCESS: Existing report has been updated.");
-                    fetchData(); showView('view-main');
+                    await fetchData(); showView('view-main');
                 } else {
                     alert("✅ SUCCESS: New report saved.");
-                    fetchData(); showView('view-main');
+                    await fetchData(); showView('view-main');
                 }
             } catch(e) { alert("Network Error"); }
             setLoader(false);
@@ -544,4 +566,3 @@
     </script>
 </body>
 </html>
-
