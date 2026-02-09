@@ -28,6 +28,7 @@
         .btn-grad { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; transition: 0.3s; }
         .btn-grad:active { transform: scale(0.96); }
         
+        /* FIX: Loader was physically blocking portals even when transparent */
         .loader-overlay { 
             position: fixed; inset: 0; background: rgba(255, 255, 255, 0.95); 
             z-index: 9999; display: flex; justify-content: center; 
@@ -35,8 +36,8 @@
         }
         .loader-overlay.hidden { 
             display: none !important; 
-            pointer-events: none; 
-            visibility: hidden; 
+            pointer-events: none !important; 
+            visibility: hidden !important; 
         }
 
         .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
@@ -126,7 +127,7 @@
         <div id="view-manager-form" class="hidden">
             <div class="glass p-6 rounded-3xl shadow-xl space-y-6">
                 <div class="flex justify-between items-center border-b pb-4">
-                    <h2 class="text-xl font-bold text-indigo-600 leading-tight">Region Assessment</h2>
+                    <h2 class="text-xl font-bold text-indigo-600 leading-tight">Assessment Form</h2>
                     <button onclick="location.reload()" class="nav-btn text-red-500 font-bold text-sm">Logout</button>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl grid grid-cols-2 text-xs font-bold">
@@ -137,10 +138,17 @@
                 <div class="space-y-3">
                     <p class="text-xs font-bold text-slate-500 uppercase">Step 1: Select Topic</p>
                     <select id="rep-topic-filter" onchange="updateStaffByTopic()" class="w-full p-4 rounded-xl border bg-white font-bold text-indigo-600"></select>
-                    <p class="text-xs font-bold text-slate-500 uppercase">Step 2: Select Staff Member</p>
+                    <p class="text-xs font-bold text-slate-500 uppercase">Step 2: Staff</p>
                     <select id="rep-staff" onchange="onStaffSelect()" class="w-full p-4 rounded-xl border font-bold text-indigo-700"></select>
                 </div>
                 
+                <div id="wrongs-container" class="p-4 bg-red-50 rounded-xl hidden text-xs text-red-700 border border-red-100 shadow-inner">
+                    <p class="font-black mb-2 uppercase tracking-widest flex items-center">
+                        <span class="mr-2">🚩</span> Coaching Points (Missed Qs)
+                    </p>
+                    <div id="wrongs-list" class="space-y-2"></div>
+                </div>
+
                 <input type="date" id="rep-date" class="w-full p-4 rounded-xl border">
                 
                 <div class="grid grid-cols-3 gap-3 text-center">
@@ -223,6 +231,7 @@
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHp52VOZXi7q3xyxgfuQ3u0ti8M5q2RagaC8zeQn4PAT4c4lGJGUEnopsfTU-fIbI3/exec"; 
+        
         let allQuestions = [], allResults = [], allReports = [], allWrongAnswers = [];
         let currentLang = 'en', quizIdx = 0, score = 0, currentQuizData = [], staffWrongs = [];
         let isQuizRunning = false, isPreviewMode = false;
@@ -247,16 +256,17 @@
             setLoader(false);
         }
 
-        // --- NAVIGATION & VIEWS ---
+        // --- IMPROVED NAVIGATION (RE-ENABLES PORTALS) ---
         function showView(id) {
-            document.querySelectorAll('.max-w-4xl > div').forEach(d => {
-                d.classList.add('hidden');
-                d.style.display = 'none';
+            const views = document.querySelectorAll('.max-w-4xl > div');
+            views.forEach(v => {
+                v.classList.add('hidden');
+                v.style.setProperty('display', 'none', 'important');
             });
             const target = document.getElementById(id);
             if(target) {
                 target.classList.remove('hidden');
-                target.style.display = 'block';
+                target.style.setProperty('display', 'block', 'important');
                 window.scrollTo(0,0);
             }
         }
@@ -289,23 +299,34 @@
             else alert("Denied.");
         }
 
-        /** SUBMISSION OPTIMIZATION **/
+        /** IPHONE DATA OPTIMIZATION **/
         async function saveQuizResult() {
             const p = { action: 'save_result', name: document.getElementById('staff-name').value.toUpperCase().trim(), outlet: document.getElementById('staff-outlet').value, topic: document.getElementById('staff-topic').value, score: `${score}/${currentQuizData.length}`, perc: Math.round((score/currentQuizData.length) * 100) + "%", wrongAnswers: staffWrongs };
-            alert("Success! Response recorded.");
+            
+            // IPHONE STABILITY: Use beacon for background reliability
+            const blob = new Blob([JSON.stringify(p)], {type: 'text/plain'});
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(GAS_URL, blob);
+            } else {
+                fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p), mode: 'no-cors' });
+            }
+            alert("Done! Your response is being uploaded.");
             location.reload(); 
-            fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p), mode: 'no-cors' }); 
         }
 
         async function submitManagerReport() {
             if(!document.getElementById('rep-date').value) return alert("Select date");
             const p = { action: 'save_report', manager: document.getElementById('disp-mgr-name').innerText, outlet: document.getElementById('disp-mgr-outlet').innerText, staffName: document.getElementById('rep-staff').value, staffScore: document.getElementById('disp-staff-perc').innerText, trainTitle: document.getElementById('rep-topic-filter').value, trainingDate: document.getElementById('rep-date').value, level: document.getElementById('disp-staff-level').innerText, comments: document.getElementById('mgr-comment').value, focus: document.getElementById('mgr-housebrand').value, gaps: document.getElementById('mgr-gaps').value, rec: document.getElementById('mgr-recom').value };
-            alert("Manager Report Saved!");
+            
+            const blob = new Blob([JSON.stringify(p)], {type: 'text/plain'});
+            if (navigator.sendBeacon) { navigator.sendBeacon(GAS_URL, blob); }
+            else { fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p), mode: 'no-cors' }); }
+            
+            alert("Report saved!");
             showView('view-main');
-            fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p), mode: 'no-cors' });
         }
 
-        /** QUIZ ENGINE **/
+        /** ENGINE LOGIC: SHOW RIGHT ANSWER **/
         function handleChoice(idx, btn, q) {
             const correctIdx = parseInt(q.correct);
             const buttons = document.querySelectorAll('.opt-btn');
@@ -316,7 +337,7 @@
                 score++;
             } else {
                 btn.classList.add('opt-wrong');
-                buttons[correctIdx].classList.add('opt-correct'); // REQUIREMENT: Show right answer
+                buttons[correctIdx].classList.add('opt-correct'); 
                 if(!isPreviewMode) {
                     staffWrongs.push({
                         qText: currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en),
@@ -327,6 +348,97 @@
             }
             if (quizIdx < currentQuizData.length - 1) document.getElementById('next-btn').classList.remove('hidden');
             else isPreviewMode ? document.getElementById('finish-preview-btn').classList.remove('hidden') : document.getElementById('submit-quiz-btn').classList.remove('hidden');
+        }
+
+        /** DATA UI POPULATION **/
+        function initDropdowns() {
+            document.getElementById('staff-outlet').innerHTML = '<option value="">Select Outlet</option>' + outletList.map(o => `<option value="${o}">${o}</option>`).join('');
+            document.getElementById('mgr-select').innerHTML = '<option value="">Select Manager</option>' + managerData.map(m => `<option value="${m.id}">${m.id}</option>`).join('');
+        }
+
+        function populateGlobalData() {
+            const topics = [...new Set(allQuestions.filter(q => (q.status || q.Status || q.STATUS) !== "Inactive").map(q => q.topic))].filter(t => t);
+            const html = topics.map(t => `<option value="${t}">${t}</option>`).join('');
+            document.getElementById('staff-topic').innerHTML = '<option value="">Select Topic</option>' + html;
+            document.getElementById('sup-preview-topic').innerHTML = '<option value="">Preview Topic</option>' + html;
+            document.getElementById('rep-topic-filter').innerHTML = '<option value="">Choose Topic</option>' + html;
+            document.getElementById('gap-topic-filter').innerHTML = '<option value="ALL">All Topics</option>' + html;
+            document.getElementById('admin-report-filter').innerHTML = '<option value="ALL">All Topics</option>' + html;
+        }
+
+        function updateStaffByTopic() {
+            const topic = document.getElementById('rep-topic-filter').value, outlet = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase(), staffSelect = document.getElementById('rep-staff');
+            staffSelect.innerHTML = '<option value="">Choose Staff...</option>';
+            if(!topic) return;
+            allResults.filter(r => (r.Outlet || "").toString().trim().toUpperCase() === outlet && (r.Topic || "").toString().trim() === topic).forEach(r => {
+                const isSub = allReports.some(rep => (rep["Staff Name"] || "").toString().trim().toUpperCase() === (r.Name || "").toString().trim().toUpperCase() && (rep["Training Title"] || "").toString().trim() === topic);
+                staffSelect.innerHTML += `<option value="${r.Name}">${isSub ? "✅" : "❌"} ${r.Name}</option>`;
+            });
+        }
+
+        /** FIXED COACHING SECTION: LISTS WRONG QUESTIONS FOR MANAGERS **/
+        function onStaffSelect() {
+            const n = document.getElementById('rep-staff').value, o = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase(), topic = document.getElementById('rep-topic-filter').value;
+            const r = allResults.find(x => (x.Name || "").trim().toUpperCase() === n.trim().toUpperCase() && (x.Outlet || "").trim().toUpperCase() === o && (x.Topic || "").trim() === topic);
+            
+            const list = document.getElementById('wrongs-list'), cont = document.getElementById('wrongs-container');
+            if(r) {
+                document.getElementById('disp-staff-score').innerText = r.Score;
+                document.getElementById('disp-staff-perc').innerText = formatToPercent(r.Percentage);
+                const p = parseInt(formatToPercent(r.Percentage));
+                const lvl = p >= 85 ? "HIGH" : (p >= 71 ? "MEDIUM" : "LOW");
+                document.getElementById('disp-staff-level').innerText = lvl;
+                document.getElementById('disp-staff-level-box').style.backgroundColor = lvl === "HIGH" ? "#10b981" : (lvl === "MEDIUM" ? "#f59e0b" : "#ef4444");
+
+                // Filter wrong answers for this specific staff + topic
+                const staffGaps = allWrongAnswers.filter(w => (w["Staff Name"] || "").trim().toUpperCase() === n.trim().toUpperCase() && (w["Topic"] || "").trim() === topic);
+                if(staffGaps.length > 0) {
+                    cont.classList.remove('hidden');
+                    list.innerHTML = staffGaps.map(w => `<div class="bg-white p-2 rounded border border-red-50 mb-1 shadow-sm"><span class="font-bold text-red-900 block">Q: ${w["Question Text"]}</span><span class="text-green-700 font-black block mt-1">✓ Correct: ${w["Correct Answer"]}</span></div>`).join('');
+                } else cont.classList.add('hidden');
+            }
+        }
+
+        /** SUPERVISOR REPORTS & LOGS **/
+        function renderSupervisorStats() {
+            document.getElementById('stat-staff').innerText = [...new Set(allResults.map(r => r.Name))].length;
+            document.getElementById('stat-reports').innerText = allReports.length;
+            document.getElementById('stat-outlets').innerText = [...new Set(allResults.map(r => r.Outlet))].length;
+            const avg = allResults.reduce((a,b) => a + parseInt(formatToPercent(b.Percentage)), 0) / (allResults.length || 1);
+            document.getElementById('stat-avg').innerText = Math.round(avg) + "%";
+            
+            renderGapsTable();
+            
+            const filterTopic = document.getElementById('admin-report-filter').value;
+            const filteredRep = filterTopic === "ALL" ? allReports : allReports.filter(r => r["Training Title"] === filterTopic);
+            document.getElementById('table-reports').innerHTML = filteredRep.slice(0, 50).map(r => `<tr><td class="p-2 font-bold">${r["Staff Name"]}</td><td class="p-2">${r["Outlet"]}</td><td class="p-2 font-bold text-indigo-600">${r["Skill Level"]}</td><td class="p-2">${r["Competency Comments"] || "-"}</td><td class="p-2">${r["Housebrand Focus"] || "-"}</td><td class="p-2 text-red-600">${r["Performance Gaps"] || "-"}</td><td class="p-2">${r["Recommendations"] || "-"}</td></tr>`).join('');
+
+            document.getElementById('table-log').innerHTML = allResults.sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp)).slice(0, 50).map(r => `<tr><td class="p-3 text-xs">${new Date(r.Timestamp).toLocaleDateString()}</td><td class="p-3 font-bold uppercase">${r.Name}</td><td class="p-3">${r.Outlet}</td><td class="p-3 text-indigo-600 font-bold">${formatToPercent(r.Percentage)}</td><td class="p-3 text-xs italic text-slate-500">${r.Topic}</td></tr>`).join('');
+        }
+
+        function renderGapsTable() {
+            const filter = document.getElementById('gap-topic-filter').value, g = {};
+            allWrongAnswers.forEach(w => {
+                if(filter === "ALL" || (w["Topic"] || "").toString().trim() === filter) {
+                    const qText = w["Question Text"];
+                    if(!g[qText]) g[qText] = { correct: w["Correct Answer"], count: 0 };
+                    g[qText].count++;
+                }
+            });
+            const s = Object.entries(g).sort((a,b) => b[1].count - a[1].count).slice(0, 8);
+            document.getElementById('table-gaps').innerHTML = s.length ? s.map(([q, d]) => `<tr><td class="p-3">${q}</td><td class="p-3 text-green-600 font-bold">${d.correct}</td><td class="p-3 text-center">${d.count}</td></tr>`).join('') : '<tr><td colspan="3" class="p-4 text-center">No errors</td></tr>';
+        }
+
+        function exportComprehensiveCSV() {
+            if (allResults.length === 0) return alert("No data available.");
+            const wrap = (t) => `"${(t || "").toString().replace(/"/g, "'").trim()}"`;
+            let csv = "Timestamp,Outlet,Staff_Name,Topic,Score,Accuracy,Level,Comments,Housebrand,Gaps,Recs,Manager\n";
+            allResults.forEach(r => {
+                const sName = r.Name.trim().toUpperCase(), sTopic = r.Topic.trim(), rep = allReports.find(x => (x["Staff Name"] || "").toString().trim().toUpperCase() === sName && (x["Training Title"] || "").toString().trim() === sTopic);
+                csv += [wrap(r.Timestamp), wrap(r.Outlet), wrap(r.Name), wrap(r.Topic), wrap(r.Score), wrap(formatToPercent(r.Percentage)), wrap(rep ? rep["Skill Level"] : "Pending"), wrap(rep ? rep["Competency Comments"] : "N/A"), wrap(rep ? rep["Housebrand Focus"] : "N/A"), wrap(rep ? rep["Performance Gaps"] : "N/A"), wrap(rep ? rep["Recommendations"] : "N/A"), wrap(rep ? rep["Manager"] : "N/A")].join(",") + "\n";
+            });
+            const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' }), l = document.createElement("a");
+            l.href = URL.createObjectURL(b); l.download = `Full_Report.csv`; l.click();
         }
 
         function renderQuestion() {
@@ -343,106 +455,6 @@
                 }
             }
             document.getElementById('next-btn').classList.add('hidden'); document.getElementById('submit-quiz-btn').classList.add('hidden');
-        }
-
-        /** SUPERVISOR DASHBOARD TABLES **/
-        function renderSupervisorStats() {
-            document.getElementById('stat-staff').innerText = [...new Set(allResults.map(r => r.Name))].length;
-            document.getElementById('stat-reports').innerText = allReports.length;
-            document.getElementById('stat-outlets').innerText = [...new Set(allResults.map(r => r.Outlet))].length;
-            const avg = allResults.reduce((a,b) => a + parseInt(formatToPercent(b.Percentage)), 0) / (allResults.length || 1);
-            document.getElementById('stat-avg').innerText = Math.round(avg) + "%";
-            
-            renderGapsTable();
-            
-            const filterTopic = document.getElementById('admin-report-filter').value;
-            const filteredRep = filterTopic === "ALL" ? allReports : allReports.filter(r => r["Training Title"] === filterTopic);
-            
-            document.getElementById('table-reports').innerHTML = filteredRep.slice(0, 50).map(r => `
-                <tr>
-                    <td class="p-2 font-bold">${r["Staff Name"]}</td>
-                    <td class="p-2">${r["Outlet"]}</td>
-                    <td class="p-2 font-bold text-indigo-600">${r["Skill Level"]}</td>
-                    <td class="p-2 italic">${r["Competency Comments"] || "-"}</td>
-                    <td class="p-2">${r["Housebrand Focus"] || "-"}</td>
-                    <td class="p-2 text-red-600">${r["Performance Gaps"] || "-"}</td>
-                    <td class="p-2">${r["Recommendations"] || "-"}</td>
-                </tr>
-            `).join('');
-
-            document.getElementById('table-log').innerHTML = allResults.sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp)).slice(0, 50).map(r => `
-                <tr>
-                    <td class="p-3 text-xs">${new Date(r.Timestamp).toLocaleDateString()}</td>
-                    <td class="p-3 font-bold uppercase">${r.Name}</td>
-                    <td class="p-3">${r.Outlet}</td>
-                    <td class="p-3 text-indigo-600 font-bold">${formatToPercent(r.Percentage)}</td>
-                    <td class="p-3 text-xs italic text-slate-500">${r.Topic}</td>
-                </tr>
-            `).join('');
-        }
-
-        function renderGapsTable() {
-            const filter = document.getElementById('gap-topic-filter').value, g = {};
-            allWrongAnswers.forEach(w => {
-                if(filter === "ALL" || (w["Topic"] || "").toString().trim() === filter) {
-                    const qText = w["Question Text"];
-                    if(!g[qText]) g[qText] = { correct: w["Correct Answer"], count: 0 };
-                    g[qText].count++;
-                }
-            });
-            const s = Object.entries(g).sort((a,b) => b[1].count - a[1].count).slice(0, 8);
-            document.getElementById('table-gaps').innerHTML = s.length ? s.map(([q, d]) => `<tr><td class="p-3">${q}</td><td class="p-3 text-green-600 font-bold">${d.correct}</td><td class="p-3 text-center">${d.count}</td></tr>`).join('') : '<tr><td colspan="3" class="p-4 text-center">No errors</td></tr>';
-        }
-
-        /** UTILITIES **/
-        function initDropdowns() {
-            document.getElementById('staff-outlet').innerHTML = '<option value="">Select Outlet</option>' + outletList.map(o => `<option value="${o}">${o}</option>`).join('');
-            document.getElementById('mgr-select').innerHTML = '<option value="">Select Manager</option>' + managerData.map(m => `<option value="${m.id}">${m.id}</option>`).join('');
-        }
-
-        function populateGlobalData() {
-            const topics = [...new Set(allQuestions.filter(q => (q.status || q.Status || q.STATUS) !== "Inactive").map(q => q.topic))].filter(t => t);
-            const html = topics.map(t => `<option value="${t}">${t}</option>`).join('');
-            document.getElementById('staff-topic').innerHTML = '<option value="">Select Topic</option>' + html;
-            document.getElementById('sup-preview-topic').innerHTML = '<option value="">Preview Topic</option>' + html;
-            document.getElementById('rep-topic-filter').innerHTML = '<option value="">Choose Topic</option>' + html;
-            document.getElementById('gap-topic-filter').innerHTML = '<option value="ALL">All Topics</option>' + html;
-            document.getElementById('admin-report-filter').innerHTML = '<option value="ALL">All Topics</option>' + html;
-        }
-
-        function exportComprehensiveCSV() {
-            if (allResults.length === 0) return alert("No data available.");
-            const wrap = (t) => `"${(t || "").toString().replace(/"/g, "'").trim()}"`;
-            let csv = "Timestamp,Outlet,Staff_Name,Topic,Score,Accuracy,Level,Comments,Housebrand,Gaps,Recs,Manager\n";
-            allResults.forEach(r => {
-                const sName = r.Name.trim().toUpperCase(), sTopic = r.Topic.trim(), rep = allReports.find(x => (x["Staff Name"] || "").toString().trim().toUpperCase() === sName && (x["Training Title"] || "").toString().trim() === sTopic);
-                csv += [wrap(r.Timestamp), wrap(r.Outlet), wrap(r.Name), wrap(r.Topic), wrap(r.Score), wrap(formatToPercent(r.Percentage)), wrap(rep ? rep["Skill Level"] : "Pending"), wrap(rep ? rep["Competency Comments"] : "N/A"), wrap(rep ? rep["Housebrand Focus"] : "N/A"), wrap(rep ? rep["Performance Gaps"] : "N/A"), wrap(rep ? rep["Recommendations"] : "N/A"), wrap(rep ? rep["Manager"] : "N/A")].join(",") + "\n";
-            });
-            const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' }), l = document.createElement("a");
-            l.href = URL.createObjectURL(b); l.download = `Report.csv`; l.click();
-        }
-
-        function updateStaffByTopic() {
-            const topic = document.getElementById('rep-topic-filter').value, outlet = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase(), staffSelect = document.getElementById('rep-staff');
-            staffSelect.innerHTML = '<option value="">Choose Staff...</option>';
-            if(!topic) return;
-            allResults.filter(r => (r.Outlet || "").toString().trim().toUpperCase() === outlet && (r.Topic || "").toString().trim() === topic).forEach(r => {
-                const isSub = allReports.some(rep => (rep["Staff Name"] || "").toString().trim().toUpperCase() === (r.Name || "").toString().trim().toUpperCase() && (rep["Training Title"] || "").toString().trim() === topic);
-                staffSelect.innerHTML += `<option value="${r.Name}">${isSub ? "✅" : "❌"} ${r.Name}</option>`;
-            });
-        }
-
-        function onStaffSelect() {
-            const n = document.getElementById('rep-staff').value, o = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase(), topic = document.getElementById('rep-topic-filter').value;
-            const r = allResults.find(x => (x.Name || "").trim().toUpperCase() === n.trim().toUpperCase() && (x.Outlet || "").trim().toUpperCase() === o && (x.Topic || "").trim() === topic);
-            if(r) {
-                document.getElementById('disp-staff-score').innerText = r.Score;
-                document.getElementById('disp-staff-perc').innerText = formatToPercent(r.Percentage);
-                const p = parseInt(formatToPercent(r.Percentage));
-                const lvl = p >= 85 ? "HIGH" : (p >= 71 ? "MEDIUM" : "LOW");
-                document.getElementById('disp-staff-level').innerText = lvl;
-                document.getElementById('disp-staff-level-box').style.backgroundColor = lvl === "HIGH" ? "#10b981" : (lvl === "MEDIUM" ? "#f59e0b" : "#ef4444");
-            }
         }
 
         function nextQuestion() { quizIdx++; renderQuestion(); }
