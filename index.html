@@ -373,7 +373,9 @@
                 return;
             }
 
-            const r = allResults.find(x => (x.Name || "").trim().toUpperCase() === n.trim().toUpperCase() && (x.Outlet || "").trim().toUpperCase() === o && (x.Topic || "").trim() === topic);
+            // FIX: coerce to string before .trim() — sheet cells can come back as
+            // number/boolean, which crashed here (Uncaught TypeError: .trim is not a function)
+            const r = allResults.find(x => (x.Name || "").toString().trim().toUpperCase() === n.trim().toUpperCase() && (x.Outlet || "").toString().trim().toUpperCase() === o && (x.Topic || "").toString().trim() === topic);
             const list = document.getElementById('wrongs-list');
             if(r) {
                 let scoreRaw = r.Score;
@@ -386,7 +388,7 @@
                 const p = parseInt(formatToPercent(r.Percentage)), lvl = p >= 85 ? "HIGH" : (p >= 71 ? "MEDIUM" : "LOW");
                 document.getElementById('disp-staff-level').innerText = lvl;
                 document.getElementById('disp-staff-level-box').style.backgroundColor = lvl === "HIGH" ? "#10b981" : (lvl === "MEDIUM" ? "#f59e0b" : "#ef4444");
-                const gaps = allWrongAnswers.filter(w => (w["Staff Name"] || "").trim().toUpperCase() === n.trim().toUpperCase() && (w["Topic"] || "").trim() === topic);
+                const gaps = allWrongAnswers.filter(w => (w["Staff Name"] || "").toString().trim().toUpperCase() === n.trim().toUpperCase() && (w["Topic"] || "").toString().trim() === topic);
                 if(gaps.length > 0) {
                     wrongsCont.classList.remove('hidden');
                     list.innerHTML = gaps.map(w => `<div class="bg-white p-2 rounded border mb-1"><p class="font-bold text-red-900 text-[11px]">Q: ${w["Question Text"]}</p><p class="text-green-700 font-black text-[11px] mt-1">✓ Correct: ${w["Correct Answer"]}</p></div>`).join('');
@@ -449,7 +451,21 @@
             const topic = document.getElementById('rep-topic-filter').value, outlet = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase(), staffSelect = document.getElementById('rep-staff');
             staffSelect.innerHTML = '<option value="">Personnel...</option>';
             if(!topic) { onStaffSelect(); return; }
-            allResults.filter(r => (r.Outlet || "").toString().trim().toUpperCase() === outlet && (r.Topic || "").toString().trim() === topic).forEach(r => {
+
+            // FIX: redundant entries — same staff took the quiz multiple times for this
+            // topic, old code listed every attempt as a separate dropdown row. Now
+            // dedupe by Name, keeping only their most recent attempt (by Timestamp).
+            const matches = allResults.filter(r => (r.Outlet || "").toString().trim().toUpperCase() === outlet && (r.Topic || "").toString().trim() === topic);
+            const latestByName = {};
+            matches.forEach(r => {
+                const key = (r.Name || "").toString().trim().toUpperCase();
+                if (!key) return;
+                const ts = new Date(r.Timestamp || 0).getTime();
+                if (!latestByName[key] || ts > latestByName[key]._ts) {
+                    latestByName[key] = { ...r, _ts: ts };
+                }
+            });
+            Object.values(latestByName).sort((a,b) => (a.Name||"").localeCompare(b.Name||"")).forEach(r => {
                 const isSub = allReports.some(rep => (rep["Staff Name"] || rep["Personnel"] || "").toString().trim().toUpperCase() === (r.Name || "").toString().trim().toUpperCase() && (rep["Training Title"] || rep["Topic"] || "").toString().trim() === topic);
                 staffSelect.innerHTML += `<option value="${r.Name}">${isSub ? "✅" : "❌"} ${r.Name}</option>`;
             });
