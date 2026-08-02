@@ -62,7 +62,7 @@
         <div id="view-main" class="animate__animated animate__fadeIn">
             <header class="text-center mb-10">
                 <h1 class="text-4xl font-black text-indigo-600 tracking-tight">RT PRO</h1>
-                <p class="text-slate-500 font-medium">Retail Training Management <span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md ml-1 align-middle font-bold">v3.1</span></p>
+                <p class="text-slate-500 font-medium">Retail Training Management <span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-md ml-1 align-middle font-bold">v3.2</span></p>
             </header>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div onclick="showView('view-staff-login')" class="glass p-8 rounded-3xl text-center cursor-pointer shadow-lg border-b-4 border-indigo-500 active:scale-95 transition">
@@ -122,7 +122,7 @@
                     <p id="hub-final-score" class="text-lg font-bold text-slate-500 mt-2">Score: 0/0</p>
                 </div>
                 <p class="text-sm text-slate-400 italic">Syncing with database...</p>
-                <button onclick="saveQuizResult()" class="w-full btn-grad p-5 rounded-2xl font-bold text-lg shadow-lg uppercase tracking-widest">Archive & Exit</button>
+                <button id="archive-btn" onclick="saveQuizResult()" class="w-full btn-grad p-5 rounded-2xl font-bold text-lg shadow-lg uppercase tracking-widest">Archive & Exit</button>
             </div>
         </div>
 
@@ -150,9 +150,9 @@
                 <input type="date" id="rep-date" class="w-full p-4 rounded-xl border">
                 
                 <div class="grid grid-cols-3 gap-3 text-center">
-                    <div class="bg-white p-3 border rounded-xl"><p class="text-[10px] uppercase">Score</p><p id="disp-staff-score" class="text-lg font-black"></p></div>
-                    <div class="bg-white p-3 border rounded-xl"><p class="text-[10px] uppercase">Accuracy</p><p id="disp-staff-perc" class="text-lg font-black"></p></div>
-                    <div id="disp-staff-level-box" class="p-3 border rounded-xl text-white font-bold uppercase"><p id="disp-staff-level" class="text-lg"></p></div>
+                    <div class="bg-white p-3 border rounded-xl"><p class="text-[10px] uppercase">Score</p><p id="disp-staff-score" class="text-lg font-black">-</p></div>
+                    <div class="bg-white p-3 border rounded-xl"><p class="text-[10px] uppercase">Accuracy</p><p id="disp-staff-perc" class="text-lg font-black">-</p></div>
+                    <div id="disp-staff-level-box" class="p-3 border rounded-xl text-white font-bold uppercase"><p id="disp-staff-level" class="text-lg">-</p></div>
                 </div>
                 
                 <textarea id="mgr-comment" placeholder="Competency Comments" class="w-full p-4 border rounded-xl h-24 outline-none"></textarea>
@@ -160,7 +160,7 @@
                 <textarea id="mgr-gaps" placeholder="Performance Gaps" class="w-full p-4 border rounded-xl h-20 outline-none"></textarea>
                 <textarea id="mgr-recom" placeholder="Recommendations" class="w-full p-4 border rounded-xl h-20 outline-none"></textarea>
                 
-                <button onclick="submitManagerReport()" class="w-full btn-grad p-4 rounded-xl font-bold uppercase active:scale-95 transition">Submit Performance Report</button>
+                <button id="submit-report-btn" onclick="submitManagerReport()" class="w-full btn-grad p-4 rounded-xl font-bold uppercase active:scale-95 transition">Submit Performance Report</button>
             </div>
         </div>
 
@@ -233,7 +233,6 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyHp52VOZXi7q3xyxgfuQ3u0ti8M5q2RagaC8zeQn4PAT4c4lGJGUEnopsfTU-fIbI3/exec"; 
         let allQuestions = [], allResults = [], allReports = [], allWrongAnswers = [];
         let currentLang = 'en', quizIdx = 0, score = 0, currentQuizData = [], staffWrongs = [];
-        let isQuizRunning = false, isPreviewMode = false;
 
         const outletList = ["AJ", "B6", "BB", "BJR", "BP", "CDR", "CK", "DG", "DGD", "GB", "GBD", "GM", "HL", "HQ", "HQCT", "JL", "JLD", "JTH", "KB", "KBKK", "KBKS", "KBTJ", "KKR", "KL", "KMD", "KMN", "KMSK", "KS", "MC", "MLR", "MR", "PC", "PK", "PM", "PP", "PPK", "PSPD", "PT", "RJ", "SLS", "SMR", "ST", "TM", "TMD", "TMT", "TPOH", "TPT", "WM"];
         const managerData = [{ id: "R1 - AMIRUL", outlets: ["DG", "DGD", "KMD", "KMN", "KMSK", "MR"] }, { id: "R2 - HAZWANI", outlets: ["AJ", "BJR", "BP", "HQCT", "KB", "PK", "WM"] }, { id: "R3 - HARIS", outlets: ["B6", "BB", "CDR", "HL", "HQ", "KL"] }, { id: "R4 - RAIHAN", outlets: ["GB", "GBD", "JTH", "RJ", "ST", "TPOH"] }, { id: "R5 - ADNIN", outlets: ["JL", "JLD", "PP", "PSPD", "SMR"] }, { id: "R6 - NADHIRAH", outlets: ["KS", "MC", "MLR", "TM", "TMD", "TMT"] }, { id: "R7 - HASANUL", outlets: ["KBKK", "KBKS", "KBTJ", "PC", "PT"] }, { id: "R8 - HAFSHAM", outlets: ["PM", "SLS", "TPT", "KKR", "PPK"] }, { id: "R9 - IFFAH / RAIHAN", outlets: ["GM", "CK"] }];
@@ -248,7 +247,6 @@
                 allQuestions = dataRaw.questions || [];
                 allWrongAnswers = dataRaw.wrongAnswers || [];
                 
-                // Requirement 1 & 2: Consolidation of Live + Archives
                 const liveRes = dataRaw.results || [];
                 const archRes = dataRaw.archiveResults || [];
                 allResults = [...liveRes, ...archRes];
@@ -276,9 +274,9 @@
             }
         }
 
-        function goHome() { isQuizRunning = false; isPreviewMode = false; showView('view-main'); }
+        function goHome() { showView('view-main'); }
 
-        /** PERFORMANCE HUB (Requirement 4) **/
+        /** PERFORMANCE HUB **/
         function revealStaffScore() {
             const perc = Math.round((score/currentQuizData.length)*100) + "%";
             document.getElementById('hub-final-perc').innerText = perc;
@@ -287,30 +285,47 @@
         }
 
         async function saveQuizResult() {
+            const btn = document.getElementById('archive-btn');
+            btn.disabled = true; btn.innerText = "Saving...";
             const p = { action: 'save_result', name: document.getElementById('staff-name').value.toUpperCase().trim(), outlet: document.getElementById('staff-outlet').value, topic: document.getElementById('staff-topic').value, score: `${score}/${currentQuizData.length}`, perc: Math.round((score/currentQuizData.length) * 100) + "%", wrongAnswers: staffWrongs };
-            const blob = new Blob([JSON.stringify(p)], {type: 'text/plain'});
-            if (navigator.sendBeacon) navigator.sendBeacon(GAS_URL, blob);
-            else fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p), mode: 'no-cors' });
+            try {
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p), mode: 'no-cors' });
+            } catch (e) { /* no-cors: can't read status, proceed */ }
             alert("Knowledge Record Securely Archived.");
             location.reload(); 
         }
 
-        /** MANAGER LOGIC (Requirement 2 & 3) **/
+        /** MANAGER LOGIC **/
         async function submitManagerReport() {
             if(!document.getElementById('rep-date').value) return alert("Select assessment date.");
+            if(!document.getElementById('rep-staff').value) return alert("Select staff.");
+            const btn = document.getElementById('submit-report-btn');
+            btn.disabled = true; btn.innerText = "Submitting...";
             const p = { action: 'save_report', manager: document.getElementById('disp-mgr-name').innerText, outlet: document.getElementById('disp-mgr-outlet').innerText, staffName: document.getElementById('rep-staff').value, staffScore: document.getElementById('disp-staff-perc').innerText, trainTitle: document.getElementById('rep-topic-filter').value, trainingDate: document.getElementById('rep-date').value, level: document.getElementById('disp-staff-level').innerText, comments: document.getElementById('mgr-comment').value, focus: document.getElementById('mgr-housebrand').value, gaps: document.getElementById('mgr-gaps').value, rec: document.getElementById('mgr-recom').value };
-            const blob = new Blob([JSON.stringify(p)], {type: 'text/plain'});
-            if (navigator.sendBeacon) navigator.sendBeacon(GAS_URL, blob);
-            else fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p), mode: 'no-cors' });
-            alert("Report Captured.");
-            document.getElementById('rep-staff').value = ""; // Persistent login logic
-            document.getElementById('mgr-comment').value = "";
-            document.getElementById('mgr-housebrand').value = "";
-            document.getElementById('mgr-gaps').value = "";
-            document.getElementById('mgr-recom').value = "";
+            try {
+                const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(p) });
+                const text = await res.text();
+                if (text.trim() === "AUTH_ERROR") {
+                    alert("❌ Denied: this staff/topic was already assessed by a different auditor.");
+                } else if (text.trim().startsWith("Error")) {
+                    alert("❌ Save failed: " + text);
+                } else {
+                    alert("✅ Report Captured.");
+                    document.getElementById('rep-staff').value = "";
+                    document.getElementById('mgr-comment').value = "";
+                    document.getElementById('mgr-housebrand').value = "";
+                    document.getElementById('mgr-gaps').value = "";
+                    document.getElementById('mgr-recom').value = "";
+                    await fetchData();
+                    updateStaffByTopic();
+                }
+            } catch (e) {
+                alert("❌ Network error, report NOT saved. Try again.");
+            }
+            btn.disabled = false; btn.innerText = "Submit Performance Report";
         }
 
-        /** SUPERVISOR INTEL (Requirement 1) **/
+        /** SUPERVISOR INTEL **/
         function renderSupervisorStats() {
             const fY = document.getElementById('sup-filter-year').value;
             const fO = document.getElementById('sup-filter-outlet').value;
@@ -318,7 +333,6 @@
             const fM = document.getElementById('sup-filter-manager').value;
 
             const filteredReports = allReports.filter(r => {
-                const staffName = r["Staff Name"] || r["Personnel"] || "Unknown";
                 const topic = r["Training Title"] || r["Topic"] || "Unknown";
                 const manager = r["Manager"] || "Unknown";
                 const ts = r["Timestamp"] || r["Date"] || Date.now();
@@ -344,11 +358,24 @@
 
         /** LOGIC HANDLERS **/
         function onStaffSelect() {
-            const n = document.getElementById('rep-staff').value, o = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase(), topic = document.getElementById('rep-topic-filter').value;
+            const n = document.getElementById('rep-staff').value;
+            const o = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase();
+            const topic = document.getElementById('rep-topic-filter').value;
+            const wrongsCont = document.getElementById('wrongs-container');
+
+            // FIX: reset display when nothing valid selected (was leaving stale data on screen)
+            if (!n) {
+                document.getElementById('disp-staff-score').innerText = "-";
+                document.getElementById('disp-staff-perc').innerText = "-";
+                document.getElementById('disp-staff-level').innerText = "-";
+                document.getElementById('disp-staff-level-box').style.backgroundColor = "";
+                wrongsCont.classList.add('hidden');
+                return;
+            }
+
             const r = allResults.find(x => (x.Name || "").trim().toUpperCase() === n.trim().toUpperCase() && (x.Outlet || "").trim().toUpperCase() === o && (x.Topic || "").trim() === topic);
-            const list = document.getElementById('wrongs-list'), cont = document.getElementById('wrongs-container');
+            const list = document.getElementById('wrongs-list');
             if(r) {
-                // Requirement 3: String recovery for scores
                 let scoreRaw = r.Score;
                 if (scoreRaw instanceof Date || (typeof scoreRaw === 'string' && scoreRaw.includes('T') && scoreRaw.includes('Z'))) {
                     const d = new Date(scoreRaw);
@@ -361,9 +388,16 @@
                 document.getElementById('disp-staff-level-box').style.backgroundColor = lvl === "HIGH" ? "#10b981" : (lvl === "MEDIUM" ? "#f59e0b" : "#ef4444");
                 const gaps = allWrongAnswers.filter(w => (w["Staff Name"] || "").trim().toUpperCase() === n.trim().toUpperCase() && (w["Topic"] || "").trim() === topic);
                 if(gaps.length > 0) {
-                    cont.classList.remove('hidden');
+                    wrongsCont.classList.remove('hidden');
                     list.innerHTML = gaps.map(w => `<div class="bg-white p-2 rounded border mb-1"><p class="font-bold text-red-900 text-[11px]">Q: ${w["Question Text"]}</p><p class="text-green-700 font-black text-[11px] mt-1">✓ Correct: ${w["Correct Answer"]}</p></div>`).join('');
-                } else cont.classList.add('hidden');
+                } else wrongsCont.classList.add('hidden');
+            } else {
+                // FIX: no quiz result found for this staff/outlet/topic combo — was silently leaving old values
+                document.getElementById('disp-staff-score').innerText = "-";
+                document.getElementById('disp-staff-perc').innerText = "-";
+                document.getElementById('disp-staff-level').innerText = "N/A";
+                document.getElementById('disp-staff-level-box').style.backgroundColor = "#94a3b8";
+                wrongsCont.classList.add('hidden');
             }
         }
 
@@ -414,24 +448,43 @@
         function updateStaffByTopic() {
             const topic = document.getElementById('rep-topic-filter').value, outlet = document.getElementById('disp-mgr-outlet').innerText.trim().toUpperCase(), staffSelect = document.getElementById('rep-staff');
             staffSelect.innerHTML = '<option value="">Personnel...</option>';
-            if(!topic) return;
+            if(!topic) { onStaffSelect(); return; }
             allResults.filter(r => (r.Outlet || "").toString().trim().toUpperCase() === outlet && (r.Topic || "").toString().trim() === topic).forEach(r => {
                 const isSub = allReports.some(rep => (rep["Staff Name"] || rep["Personnel"] || "").toString().trim().toUpperCase() === (r.Name || "").toString().trim().toUpperCase() && (rep["Training Title"] || rep["Topic"] || "").toString().trim() === topic);
                 staffSelect.innerHTML += `<option value="${r.Name}">${isSub ? "✅" : "❌"} ${r.Name}</option>`;
             });
+            // FIX (main complaint): dropdown defaults to blank "Personnel..." — must reset boxes,
+            // NOT auto-select first staff (avoids showing wrong staff's score by accident).
+            onStaffSelect();
         }
         function setLang(l) { currentLang = l; document.getElementById('lang-en').className = l === 'en' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold'; document.getElementById('lang-ms').className = l === 'ms' ? 'p-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white font-bold' : 'p-3 rounded-xl border-2 border-slate-200 font-bold'; }
         function setLoader(show, text = "Loading...") { const l = document.getElementById('loader'); document.getElementById('loader-text').innerText = text; if(show) l.classList.remove('hidden'); else l.classList.add('hidden'); }
         function formatToPercent(v) { let n = parseFloat(v); if(isNaN(n)) return "0%"; if (n > 0 && n <= 1) return Math.round(n * 100) + "%"; return Math.round(n) + "%"; }
+
+        // FIX: option-index bug. Old code built buttons only for non-empty options but
+        // still keyed correctness off array position (buttons[correctIdx]), which broke
+        // whenever an earlier option was blank/undefined and got skipped. Now keyed by
+        // actual option index (idx) via data attribute + map lookup — always accurate.
         function handleChoice(idx, btn, q) {
-            const correctIdx = parseInt(q.correct), buttons = document.querySelectorAll('.opt-btn');
-            buttons.forEach(b => b.style.pointerEvents = 'none'); 
-            if (idx === correctIdx) { btn.classList.add('opt-correct'); score++; } else {
-                btn.classList.add('opt-wrong'); buttons[correctIdx].classList.add('opt-correct'); 
-                if(!isPreviewMode) staffWrongs.push({ qText: currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en), userChoice: btn.innerText, correctText: currentLang === 'en' ? q[`opt${correctIdx + 1}_en`] : (q[`opt${correctIdx+1}_ms`] || q[`opt${correctIdx+1}_en`]) });
+            const correctIdx = parseInt(q.correct);
+            const buttons = document.querySelectorAll('.opt-btn');
+            buttons.forEach(b => b.style.pointerEvents = 'none');
+            const correctBtn = document.querySelector(`.opt-btn[data-idx="${correctIdx}"]`);
+            if (idx === correctIdx) {
+                btn.classList.add('opt-correct');
+                score++;
+            } else {
+                btn.classList.add('opt-wrong');
+                if (correctBtn) correctBtn.classList.add('opt-correct');
+                const correctOpt = currentLang === 'en' ? q[`opt${correctIdx + 1}_en`] : (q[`opt${correctIdx + 1}_ms`] || q[`opt${correctIdx + 1}_en`]);
+                staffWrongs.push({
+                    qText: currentLang === 'en' ? q.question_en : (q.question_ms || q.question_en),
+                    userChoice: btn.innerText,
+                    correctText: correctOpt
+                });
             }
             if (quizIdx < currentQuizData.length - 1) document.getElementById('next-btn').classList.remove('hidden');
-            else isPreviewMode ? document.getElementById('finish-preview-btn').classList.remove('hidden') : document.getElementById('submit-quiz-btn').classList.remove('hidden');
+            else document.getElementById('submit-quiz-btn').classList.remove('hidden');
         }
         function renderQuestion() {
             const q = currentQuizData[quizIdx];
@@ -443,6 +496,7 @@
                 let txt = (opt !== undefined && opt !== null) ? opt.toString().trim() : "";
                 if (txt !== "" && txt.toLowerCase() !== "undefined") {
                     const b = document.createElement('button'); b.className = "opt-btn shadow-sm animate__animated animate__fadeInUp";
+                    b.dataset.idx = i - 1;
                     b.innerText = txt; b.onclick = () => handleChoice(i - 1, b, q); grid.appendChild(b);
                 }
             }
@@ -454,7 +508,7 @@
             if(!n || !t || !o) return alert("All fields required");
             currentQuizData = allQuestions.filter(q => q.topic == t);
             quizIdx = 0; score = 0; staffWrongs = [];
-            isQuizRunning = true; renderQuestion(); showView('view-quiz');
+            renderQuestion(); showView('view-quiz');
         }
         function exportComprehensiveCSV() {
             if (allResults.length === 0) return alert("No data");
@@ -464,7 +518,7 @@
                 csv += [wrap(r.Timestamp||r.Date), wrap(r["Staff Name"]||r.Personnel), wrap(r.Manager), wrap(r["Training Title"]||r.Topic), wrap(r["Quiz Score"]), wrap(r["Competency Comments"]), wrap(r["Housebrand Focus"]), wrap(r["Performance Gaps"]), wrap(r.Recommendations), wrap(r.Outlet)].join(",") + "\n";
             });
             const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' }), l = document.createElement("a");
-            l.href = URL.createObjectURL(b); l.download = `RT_Master_Intel_v3.1.csv`; l.click();
+            l.href = URL.createObjectURL(b); l.download = `RT_Master_Intel_v3.2.csv`; l.click();
         }
     </script>
 </body>
